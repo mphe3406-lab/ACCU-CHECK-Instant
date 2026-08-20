@@ -1,0 +1,925 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ระบบควบคุมคุณภาพ IQC DTX - รพ.หนองสองห้อง</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: { sans: ['Kanit', 'sans-serif'] },
+                    colors: { 
+                        primary: '#8b5cf6', // Soft Violet
+                        secondary: '#ec4899', // Soft Pink
+                        dark: '#475569', // Slate 600 (Softer than dark gray)
+                        surface: 'rgba(255, 255, 255, 0.7)'
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        @keyframes gradientBG {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+        body { 
+            font-family: 'Kanit', sans-serif; 
+            background: linear-gradient(-45deg, #f8fafc, #f3e8ff, #fdf4ff, #eff6ff);
+            background-size: 400% 400%;
+            animation: gradientBG 15s ease infinite;
+        }
+        .tab-active { 
+            background: linear-gradient(to right, #ede9fe, #fce7f3);
+            color: #7c3aed; 
+            font-weight: 600; 
+            border-radius: 1rem;
+            box-shadow: 0 4px 6px -1px rgba(139, 92, 246, 0.1);
+        }
+        .tab-inactive { color: #64748b; font-weight: 500; border-radius: 1rem; }
+        .tab-inactive:hover { background-color: rgba(255,255,255,0.5); }
+        
+        .glass-panel { 
+            background: rgba(255, 255, 255, 0.65); 
+            backdrop-filter: blur(16px); 
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid rgba(255, 255, 255, 0.8);
+            box-shadow: 0 10px 40px -10px rgba(139, 92, 246, 0.1);
+        }
+        .glass-input {
+            background: rgba(255, 255, 255, 0.7);
+            border: 1px solid rgba(226, 232, 240, 0.8);
+            transition: all 0.3s ease;
+        }
+        .glass-input:focus {
+            background: rgba(255, 255, 255, 1);
+            border-color: #a78bfa;
+            box-shadow: 0 0 0 4px rgba(167, 139, 250, 0.2);
+            outline: none;
+        }
+        .loader { border-top-color: #8b5cf6; -webkit-animation: spinner 1.5s linear infinite; animation: spinner 1.5s linear infinite; }
+        @keyframes spinner { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        
+        /* Custom smooth scrollbar */
+        ::-webkit-scrollbar { width: 8px; height: 8px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+    </style>
+</head>
+<body class="text-gray-800 h-screen flex flex-col overflow-hidden">
+
+    <nav class="bg-white/40 backdrop-blur-md border-b border-white/60 z-10 flex-shrink-0 transition-all shadow-sm">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between h-20 items-center">
+                <div class="flex items-center">
+                    <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-violet-400 to-pink-400 flex items-center justify-center shadow-lg shadow-violet-200 mr-3">
+                        <i class="fa-solid fa-truck-medical text-white text-xl"></i>
+                    </div>
+                    <span class="font-bold text-2xl text-transparent bg-clip-text bg-gradient-to-r from-violet-600 to-pink-500 hidden sm:block">IQC DTX System <span class="text-sm font-normal text-slate-500" style="-webkit-text-fill-color: #64748b;">รพ.หนองสองห้อง</span></span>
+                    <span class="font-bold text-xl text-transparent bg-clip-text bg-gradient-to-r from-violet-600 to-pink-500 sm:hidden">IQC DTX</span>
+                </div>
+                <div class="flex space-x-1 sm:space-x-4 items-center">
+                    <button onclick="switchTab('record')" id="tab-record" class="tab-active px-3 sm:px-5 py-2.5 text-sm sm:text-base transition-all duration-300">
+                        <i class="fa-solid fa-pen-to-square mr-1"></i> บันทึกผล
+                    </button>
+                    <button onclick="switchTab('dashboard')" id="tab-dashboard" class="tab-inactive px-3 sm:px-5 py-2.5 text-sm sm:text-base transition-all duration-300">
+                        <i class="fa-solid fa-chart-pie mr-1"></i> แดชบอร์ด
+                    </button>
+                    <button onclick="logout()" id="btn-logout" class="hidden text-rose-400 hover:text-rose-600 hover:bg-rose-50 rounded-xl px-4 py-2.5 text-sm font-medium transition-all duration-200">
+                        <i class="fa-solid fa-arrow-right-from-bracket"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Global Loader -->
+    <main class="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8 relative">
+        
+        <!-- View: Record Form -->
+        <div id="view-record" class="max-w-4xl mx-auto transition-opacity duration-300">
+            <div class="glass-panel rounded-[2rem] p-6 sm:p-10 relative overflow-hidden">
+                <!-- Decorative background elements -->
+                <div class="absolute -top-24 -right-24 w-48 h-48 bg-purple-200 rounded-full mix-blend-multiply filter blur-2xl opacity-50"></div>
+                <div class="absolute -bottom-24 -left-24 w-48 h-48 bg-pink-200 rounded-full mix-blend-multiply filter blur-2xl opacity-50"></div>
+                
+                <div class="flex justify-between items-center mb-8 border-b border-gray-100/50 pb-5 relative z-10">
+                    <h2 class="text-2xl font-bold text-dark flex items-center">
+                        <span class="bg-pink-100 text-pink-500 w-10 h-10 rounded-xl flex items-center justify-center mr-3 shadow-sm"><i class="fa-solid fa-flask-vial"></i></span> 
+                        บันทึกผลควบคุมคุณภาพ (IQC)
+                    </h2>
+                    <span class="bg-white/80 border border-violet-100 text-violet-700 shadow-sm text-xs font-semibold px-3 py-1 rounded-full">ACCU-CHEK Instant</span>
+                </div>
+
+                <form id="iqcForm" class="space-y-6 relative z-10">
+                    <input type="hidden" id="recordId" value="">
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                        <!-- ส่วนข้อมูลทั่วไป -->
+                        <div class="space-y-5 bg-white/40 p-6 rounded-2xl border border-white/60 shadow-sm">
+                            <h3 class="font-semibold text-lg text-violet-600 flex items-center"><i class="fa-regular fa-clipboard mr-2"></i> ข้อมูลทั่วไป</h3>
+                            <div>
+                                <label class="block text-sm font-medium text-slate-600 mb-1.5">วันที่ทดสอบ <span class="text-rose-500">*</span></label>
+                                <input type="date" id="testDate" required class="glass-input w-full rounded-xl p-3">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-slate-600 mb-1.5">หน่วยงาน <span class="text-rose-500">*</span></label>
+                                <select id="department" required class="glass-input w-full rounded-xl p-3">
+                                    <option value="">-- เลือกหน่วยงาน --</option>
+                                    <option value="OPD">OPD</option>
+                                    <option value="ER">ER</option>
+                                    <option value="MED">MED</option>
+                                    <option value="PC">PC</option>
+                                    <option value="IPDชาย">IPDชาย</option>
+                                    <option value="IPDหญิง">IPDหญิง</option>
+                                    <option value="ICU">ICU</option>
+                                    <option value="LR">LR</option>
+                                    <option value="OR">OR</option>
+                                    <option value="NCD">NCD</option>
+                                    <option value="PCU">PCU</option>
+                                    <option value="ส่งเสริม">ส่งเสริม</option>
+                                    <option value="TB clinic">TB clinic</option>
+                                    <option value="LAB">ห้องปฏิบัติการ (LAB)</option>
+                                    <option value="อื่นๆ">อื่นๆ</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-slate-600 mb-1.5">รหัสเครื่อง / หมายเลขเครื่อง <span class="text-rose-500">*</span></label>
+                                <input type="text" id="machineId" required placeholder="เช่น ACC-OPD-01" class="glass-input w-full rounded-xl p-3 uppercase placeholder:text-slate-300">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-slate-600 mb-1.5">ผู้ทดสอบ <span class="text-rose-500">*</span></label>
+                                <input type="text" id="tester" required placeholder="ชื่อ-สกุล หรือรหัสพนักงาน" class="glass-input w-full rounded-xl p-3 placeholder:text-slate-300">
+                            </div>
+                        </div>
+
+                        <!-- ส่วนข้อมูลน้ำยาและผล -->
+                        <div class="space-y-5 bg-white/40 p-6 rounded-2xl border border-white/60 shadow-sm">
+                            <h3 class="font-semibold text-lg text-pink-500 flex items-center"><i class="fa-solid fa-vials mr-2"></i> วัสดุทดสอบ และผลลัพธ์</h3>
+                            
+                            <div class="grid grid-cols-2 gap-4">
+                                <div>
+                                    <label class="block text-xs font-medium text-slate-600 mb-1.5">Lot Control <span class="text-rose-500">*</span></label>
+                                    <input type="text" id="controlLot" required class="glass-input w-full rounded-xl p-2.5 uppercase text-sm">
+                                </div>
+                                <div>
+                                    <label class="block text-xs font-medium text-slate-600 mb-1.5">วันหมดอายุ Control <span class="text-rose-500">*</span></label>
+                                    <input type="date" id="controlExp" required class="glass-input w-full rounded-xl p-2.5 text-sm" onchange="checkExpiry(this)">
+                                </div>
+                            </div>
+                            
+                            <div class="grid grid-cols-2 gap-4">
+                                <div>
+                                    <label class="block text-xs font-medium text-slate-600 mb-1.5">Lot Strip <span class="text-rose-500">*</span></label>
+                                    <input type="text" id="stripLot" required class="glass-input w-full rounded-xl p-2.5 uppercase text-sm">
+                                </div>
+                                <div>
+                                    <label class="block text-xs font-medium text-slate-600 mb-1.5">วันหมดอายุ Strip <span class="text-rose-500">*</span></label>
+                                    <input type="date" id="stripExp" required class="glass-input w-full rounded-xl p-2.5 text-sm" onchange="checkExpiry(this)">
+                                </div>
+                            </div>
+
+                            <div class="p-5 bg-gradient-to-br from-violet-50 to-pink-50 rounded-2xl border border-white mt-4 shadow-inner">
+                                <div class="grid grid-cols-2 gap-5">
+                                    <div>
+                                        <label class="block text-sm font-medium text-slate-700 mb-2">ผล Level 1 (mg/dL) <span class="text-rose-500">*</span></label>
+                                        <input type="number" step="0.1" id="l1Result" required class="glass-input w-full rounded-xl p-3 text-center text-xl font-bold text-violet-700 shadow-sm" oninput="evaluateQC()">
+                                        <div id="l1Badge" class="mt-2 text-center text-xs font-bold py-1.5 rounded-lg shadow-sm hidden transition-all"></div>
+                                    </div>
+                                    <div>
+                                        <label class="block text-sm font-medium text-slate-700 mb-2">ผล Level 2 (mg/dL) <span class="text-rose-500">*</span></label>
+                                        <input type="number" step="0.1" id="l2Result" required class="glass-input w-full rounded-xl p-3 text-center text-xl font-bold text-pink-600 shadow-sm" oninput="evaluateQC()">
+                                        <div id="l2Badge" class="mt-2 text-center text-xs font-bold py-1.5 rounded-lg shadow-sm hidden transition-all"></div>
+                                    </div>
+                                </div>
+                                <div class="mt-3 text-xs text-slate-500 text-center flex items-center justify-center" id="qcRangeHint">
+                                    <!-- Ranges will be dynamically populated -->
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="flex justify-end space-x-4 pt-6 border-t border-gray-100/50">
+                        <button type="button" onclick="clearForm()" class="px-6 py-3 bg-white border border-slate-200 hover:bg-slate-50 hover:text-slate-800 text-slate-600 rounded-xl font-medium transition-all shadow-sm">
+                            <i class="fa-solid fa-eraser mr-1"></i> ล้างข้อมูล
+                        </button>
+                        <button type="submit" class="px-8 py-3 bg-gradient-to-r from-violet-500 to-pink-500 hover:from-violet-600 hover:to-pink-600 text-white rounded-xl font-medium shadow-lg shadow-pink-500/30 transition-all hover:-translate-y-0.5 active:scale-95">
+                            <i class="fa-solid fa-save mr-1"></i> บันทึกผล IQC
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- View: Dashboard -->
+        <div id="view-dashboard" class="hidden max-w-7xl mx-auto pb-10">
+            
+            <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-8 bg-white/50 backdrop-blur-md p-5 rounded-2xl border border-white/60 shadow-sm">
+                <h2 class="text-2xl font-bold text-dark flex items-center">
+                    <span class="w-10 h-10 rounded-xl bg-violet-100 text-violet-600 flex items-center justify-center mr-3"><i class="fa-solid fa-chart-line"></i></span>
+                    Dashboard การควบคุมคุณภาพ
+                </h2>
+                <div class="mt-4 sm:mt-0 flex space-x-3 w-full sm:w-auto">
+                    <button onclick="loadDashboardData()" class="flex-1 sm:flex-none px-5 py-2.5 bg-white border border-slate-200 shadow-sm rounded-xl text-sm font-medium hover:bg-slate-50 text-slate-700 transition-all">
+                        <i class="fa-solid fa-rotate-right mr-1 text-violet-500"></i> รีเฟรช
+                    </button>
+                    <button onclick="setupGAS()" class="flex-1 sm:flex-none px-5 py-2.5 bg-amber-50 text-amber-700 border border-amber-200 shadow-sm rounded-xl text-sm font-medium hover:bg-amber-100 transition-all" title="สร้างตารางใน Google Sheets">
+                        <i class="fa-solid fa-wrench mr-1"></i> Setup DB
+                    </button>
+                </div>
+            </div>
+
+            <!-- KPI Cards -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5 mb-8">
+                <div class="glass-panel rounded-2xl p-6 flex items-center justify-between hover:scale-[1.02] transition-transform duration-300">
+                    <div>
+                        <p class="text-sm text-slate-500 font-semibold mb-1">จำนวนตรวจทั้งหมด</p>
+                        <h3 class="text-3xl font-bold text-slate-800" id="kpi-total">0</h3>
+                    </div>
+                    <div class="w-14 h-14 bg-gradient-to-br from-blue-100 to-indigo-100 rounded-2xl flex items-center justify-center text-indigo-500 text-2xl shadow-inner">
+                        <i class="fa-solid fa-vials"></i>
+                    </div>
+                </div>
+                <div class="glass-panel rounded-2xl p-6 flex items-center justify-between hover:scale-[1.02] transition-transform duration-300">
+                    <div>
+                        <p class="text-sm text-slate-500 font-semibold mb-1">อัตราผ่านเกณฑ์ QC</p>
+                        <h3 class="text-3xl font-bold text-emerald-600" id="kpi-pass-rate">0%</h3>
+                    </div>
+                    <div class="w-14 h-14 bg-gradient-to-br from-emerald-50 to-teal-100 rounded-2xl flex items-center justify-center text-emerald-500 text-2xl shadow-inner">
+                        <i class="fa-solid fa-check-circle"></i>
+                    </div>
+                </div>
+                <div class="glass-panel rounded-2xl p-6 flex items-center justify-between cursor-pointer hover:bg-rose-50 hover:scale-[1.02] transition-all duration-300 border-rose-100/50" onclick="filterTableByStatus('Fail')">
+                    <div>
+                        <p class="text-sm text-slate-500 font-semibold mb-1">จำนวนผลไม่ผ่าน</p>
+                        <h3 class="text-3xl font-bold text-rose-500" id="kpi-fail">0</h3>
+                    </div>
+                    <div class="w-14 h-14 bg-gradient-to-br from-rose-100 to-pink-100 rounded-2xl flex items-center justify-center text-rose-500 text-2xl shadow-inner">
+                        <i class="fa-solid fa-triangle-exclamation"></i>
+                    </div>
+                </div>
+                <div class="glass-panel rounded-2xl p-6 flex items-center justify-between cursor-pointer hover:bg-amber-50 hover:scale-[1.02] transition-all duration-300 border-amber-100/50" onclick="filterTableByExpiry()">
+                    <div>
+                        <p class="text-sm text-slate-500 font-semibold mb-1">ใกล้หมดอายุ</p>
+                        <h3 class="text-3xl font-bold text-amber-500" id="kpi-expiring">0</h3>
+                    </div>
+                    <div class="w-14 h-14 bg-gradient-to-br from-amber-100 to-orange-100 rounded-2xl flex items-center justify-center text-amber-500 text-2xl shadow-inner">
+                        <i class="fa-solid fa-clock"></i>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Charts -->
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
+                <div class="glass-panel rounded-2xl p-6 lg:col-span-2 shadow-sm">
+                    <h3 class="text-lg font-bold text-slate-700 mb-5 flex items-center">
+                        <i class="fa-solid fa-chart-area text-violet-400 mr-2"></i> แนวโน้มผลการควบคุมคุณภาพ (L1 & L2)
+                    </h3>
+                    <div class="relative h-64 w-full">
+                        <canvas id="trendChart"></canvas>
+                    </div>
+                </div>
+                <div class="glass-panel rounded-2xl p-6 shadow-sm">
+                    <h3 class="text-lg font-bold text-slate-700 mb-5 flex items-center">
+                        <i class="fa-solid fa-pie-chart text-pink-400 mr-2"></i> สัดส่วนตามหน่วยงาน
+                    </h3>
+                    <div class="relative h-64 w-full flex justify-center">
+                        <canvas id="deptChart"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Data Table -->
+            <div class="glass-panel rounded-3xl overflow-hidden shadow-sm">
+                <div class="p-6 border-b border-white/60 bg-white/40 flex flex-col sm:flex-row justify-between items-center gap-4">
+                    <h3 class="text-lg font-bold text-slate-700 flex items-center">
+                        <i class="fa-solid fa-list-alt text-indigo-400 mr-2"></i> ประวัติการบันทึกข้อมูล
+                    </h3>
+                    <div class="flex gap-3 w-full sm:w-auto">
+                        <div class="relative w-full sm:w-72">
+                            <i class="fa-solid fa-search absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400"></i>
+                            <input type="text" id="searchInput" placeholder="ค้นหาหน่วยงาน, เครื่อง..." class="glass-input pl-10 pr-4 py-2.5 w-full rounded-xl text-sm" onkeyup="renderTable()">
+                        </div>
+                        <button onclick="renderTable()" class="px-4 py-2.5 bg-white border border-slate-200 hover:bg-slate-50 rounded-xl text-slate-600 shadow-sm transition-all font-medium whitespace-nowrap">
+                            <i class="fa-solid fa-filter text-slate-400 mr-1"></i> ทั้งหมด
+                        </button>
+                    </div>
+                </div>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-sm text-left text-slate-600">
+                        <thead class="text-xs text-slate-500 uppercase bg-slate-50/50 border-b border-slate-100">
+                            <tr>
+                                <th scope="col" class="px-5 py-4 font-semibold">วันที่</th>
+                                <th scope="col" class="px-5 py-4 font-semibold">หน่วยงาน</th>
+                                <th scope="col" class="px-5 py-4 font-semibold">รหัสเครื่อง</th>
+                                <th scope="col" class="px-5 py-4 text-center font-semibold">L1</th>
+                                <th scope="col" class="px-5 py-4 text-center font-semibold">L2</th>
+                                <th scope="col" class="px-5 py-4 text-center font-semibold">สถานะ</th>
+                                <th scope="col" class="px-5 py-4 font-semibold">ผู้ทดสอบ</th>
+                                <th scope="col" class="px-5 py-4 text-right font-semibold">จัดการ</th>
+                            </tr>
+                        </thead>
+                        <tbody id="dataTableBody" class="divide-y divide-slate-100/50">
+                            <!-- Table rows will be inserted here by JS -->
+                        </tbody>
+                    </table>
+                </div>
+                <div class="p-8 text-center text-slate-400 text-sm hidden flex-col items-center justify-center" id="emptyState">
+                    <i class="fa-solid fa-folder-open text-4xl mb-3 text-slate-300"></i>
+                    ไม่พบข้อมูลที่ค้นหา
+                </div>
+            </div>
+
+        </div>
+    </main>
+
+    <!-- Global Loader -->
+    <div id="global-loader" class="fixed inset-0 bg-white/80 backdrop-blur-sm z-50 flex-col items-center justify-center" style="display: none;">
+        <div class="loader ease-linear rounded-full border-4 border-t-4 border-slate-200 h-16 w-16 mb-4"></div>
+        <h2 class="text-center text-violet-600 text-xl font-semibold">กำลังประมวลผล...</h2>
+    </div>
+
+    <!-- Login Modal -->
+    <div id="login-modal" class="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-50 hidden">
+        <div class="flex items-center justify-center min-h-screen p-4">
+            <div class="bg-white/90 backdrop-blur-lg border border-white p-8 rounded-3xl shadow-2xl w-full max-w-md transform transition-all">
+                <div class="text-center mb-8">
+                    <div class="w-16 h-16 bg-violet-100 text-violet-600 rounded-2xl flex items-center justify-center text-3xl mx-auto mb-4 shadow-inner">
+                        <i class="fa-solid fa-lock"></i>
+                    </div>
+                    <h3 class="text-2xl font-bold text-slate-800">ผู้ดูแลระบบ</h3>
+                    <p class="text-slate-500 mt-1">เข้าสู่ระบบเพื่อจัดการข้อมูล Dashboard</p>
+                </div>
+                <form id="loginForm" class="space-y-5">
+                    <div>
+                        <label class="block text-sm font-medium text-slate-700 mb-1.5">ชื่อผู้ใช้งาน</label>
+                        <div class="relative">
+                            <i class="fa-solid fa-user absolute left-4 top-1/2 -translate-y-1/2 text-slate-400"></i>
+                            <input type="text" id="username" required class="glass-input w-full pl-11 pr-4 py-3 rounded-xl text-sm" placeholder="admin">
+                        </div>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-slate-700 mb-1.5">รหัสผ่าน</label>
+                        <div class="relative">
+                            <i class="fa-solid fa-key absolute left-4 top-1/2 -translate-y-1/2 text-slate-400"></i>
+                            <input type="password" id="password" required class="glass-input w-full pl-11 pr-4 py-3 rounded-xl text-sm" placeholder="••••••••">
+                        </div>
+                    </div>
+                    <div class="flex gap-3 pt-4">
+                        <button type="button" onclick="switchTab('record')" class="flex-1 px-4 py-3 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl font-medium transition-colors">ยกเลิก</button>
+                        <button type="submit" class="flex-1 px-4 py-3 bg-gradient-to-r from-violet-600 to-pink-500 hover:from-violet-700 hover:to-pink-600 text-white rounded-xl font-medium shadow-lg shadow-violet-200 transition-transform active:scale-95">เข้าสู่ระบบ</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // ==========================================
+        // CONFIGURATION: URL ของ Google Apps Script Web App
+        // ==========================================
+        const GAS_URL = "https://script.google.com/macros/s/AKfycbwIUwe9MKx_VTq6ITOGxSSjzZTqTc46MQ008uha2sDMTUyxZx4I3gD65c2COJ8_CAv0/exec"; 
+
+        // State Variables
+        let isLoggedIn = false;
+        let allRecords = [];
+        let currentFilter = '';
+        
+        // QC Config (จะถูกดึงจาก Backend หากมี หรือใช้ค่าเริ่มต้นนี้)
+        let qcConfig = {
+            l1: { min: 30, max: 60 },
+            l2: { min: 250, max: 350 }
+        };
+
+        // Charts instances
+        let trendChartInstance = null;
+        let deptChartInstance = null;
+
+        // Initialize
+        document.addEventListener("DOMContentLoaded", () => {
+            // Set default date to today
+            document.getElementById('testDate').valueAsDate = new Date();
+            
+            // Set hints
+            document.getElementById('qcRangeHint').innerText = 
+                `* เกณฑ์มาตรฐานอ้างอิง: L1 (${qcConfig.l1.min}-${qcConfig.l1.max}), L2 (${qcConfig.l2.min}-${qcConfig.l2.max})`;
+
+            // Form Submit Listeners
+            document.getElementById('iqcForm').addEventListener('submit', handleFormSubmit);
+            document.getElementById('loginForm').addEventListener('submit', handleLogin);
+        });
+
+        // ==========================================
+        // UI & NAVIGATION LOGIC
+        // ==========================================
+        function switchTab(tab) {
+            const viewRecord = document.getElementById('view-record');
+            const viewDashboard = document.getElementById('view-dashboard');
+            const tabRecord = document.getElementById('tab-record');
+            const tabDashboard = document.getElementById('tab-dashboard');
+            const loginModal = document.getElementById('login-modal');
+
+            if (tab === 'dashboard' && !isLoggedIn) {
+                loginModal.classList.remove('hidden');
+                return;
+            }
+
+            loginModal.classList.add('hidden');
+
+            if (tab === 'record') {
+                viewRecord.classList.remove('hidden');
+                viewDashboard.classList.add('hidden');
+                tabRecord.className = "tab-active px-2 sm:px-3 py-4 text-sm sm:text-base transition-colors duration-200";
+                tabDashboard.className = "tab-inactive px-2 sm:px-3 py-4 text-sm sm:text-base transition-colors duration-200";
+            } else {
+                viewRecord.classList.add('hidden');
+                viewDashboard.classList.remove('hidden');
+                tabDashboard.className = "tab-active px-2 sm:px-3 py-4 text-sm sm:text-base transition-colors duration-200";
+                tabRecord.className = "tab-inactive px-2 sm:px-3 py-4 text-sm sm:text-base transition-colors duration-200";
+                loadDashboardData();
+            }
+        }
+
+        function showLoader(show) {
+            document.getElementById('global-loader').style.display = show ? 'flex' : 'none';
+        }
+
+        // ==========================================
+        // VALIDATION & QC LOGIC
+        // ==========================================
+        function checkExpiry(inputElement) {
+            const today = new Date();
+            today.setHours(0,0,0,0);
+            const expDate = new Date(inputElement.value);
+            
+            if (expDate < today) {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'คำเตือน: วัสดุหมดอายุแล้ว!',
+                    text: 'กรุณาตรวจสอบ Lot ที่นำมาใช้งาน',
+                    confirmButtonColor: '#0ea5e9'
+                });
+                inputElement.classList.add('border-red-500', 'bg-red-50');
+            } else {
+                const diffTime = Math.abs(expDate - today);
+                const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)); 
+                if (diffDays <= 30) {
+                    Swal.fire({
+                        icon: 'warning',
+                        title: 'วัสดุใกล้หมดอายุ',
+                        text: `เหลือเวลาอีก ${diffDays} วัน`,
+                        toast: true, position: 'top-end', timer: 3000, showConfirmButton: false
+                    });
+                    inputElement.classList.add('border-orange-400');
+                } else {
+                    inputElement.classList.remove('border-red-500', 'bg-red-50', 'border-orange-400');
+                }
+            }
+        }
+
+        function evaluateQC() {
+            const l1 = parseFloat(document.getElementById('l1Result').value);
+            const l2 = parseFloat(document.getElementById('l2Result').value);
+            
+            const badge1 = document.getElementById('l1Badge');
+            const badge2 = document.getElementById('l2Badge');
+
+            if (!isNaN(l1)) {
+                badge1.classList.remove('hidden');
+                if (l1 >= qcConfig.l1.min && l1 <= qcConfig.l1.max) {
+                    badge1.className = "mt-2 text-center text-xs font-bold py-1.5 rounded-lg shadow-sm bg-emerald-100 text-emerald-700";
+                    badge1.innerText = "ผ่าน (Pass)";
+                } else {
+                    badge1.className = "mt-2 text-center text-xs font-bold py-1.5 rounded-lg shadow-sm bg-rose-100 text-rose-700";
+                    badge1.innerText = "ไม่ผ่าน (Fail)";
+                }
+            } else { badge1.classList.add('hidden'); }
+
+            if (!isNaN(l2)) {
+                badge2.classList.remove('hidden');
+                if (l2 >= qcConfig.l2.min && l2 <= qcConfig.l2.max) {
+                    badge2.className = "mt-2 text-center text-xs font-bold py-1.5 rounded-lg shadow-sm bg-emerald-100 text-emerald-700";
+                    badge2.innerText = "ผ่าน (Pass)";
+                } else {
+                    badge2.className = "mt-2 text-center text-xs font-bold py-1.5 rounded-lg shadow-sm bg-rose-100 text-rose-700";
+                    badge2.innerText = "ไม่ผ่าน (Fail)";
+                }
+            } else { badge2.classList.add('hidden'); }
+        }
+
+        function getStatusFromValue(val, level) {
+            if(isNaN(val)) return "";
+            if (level === 1) return (val >= qcConfig.l1.min && val <= qcConfig.l1.max) ? "Pass" : "Fail";
+            if (level === 2) return (val >= qcConfig.l2.min && val <= qcConfig.l2.max) ? "Pass" : "Fail";
+            return "";
+        }
+
+        // ==========================================
+        // API COMMUNICATION (CRUD)
+        // ==========================================
+        async function gasRequest(payload) {
+            if (GAS_URL === "YOUR_GOOGLE_WEB_APP_URL_HERE") {
+                Swal.fire('ข้อผิดพลาด', 'ยังไม่ได้ระบุ GAS Web App URL ใน Source Code', 'error');
+                throw new Error("Missing GAS URL");
+            }
+            try {
+                const response = await fetch(GAS_URL, {
+                    method: 'POST',
+                    redirect: 'follow', // จำเป็นสำหรับ GAS
+                    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+                    body: JSON.stringify(payload)
+                });
+                return await response.json();
+            } catch (error) {
+                console.error("API Error:", error);
+                throw error;
+            }
+        }
+
+        async function setupGAS() {
+            showLoader(true);
+            try {
+                const res = await gasRequest({ action: 'setup' });
+                Swal.fire('สำเร็จ', res.message, 'success');
+            } catch (e) {
+                Swal.fire('ข้อผิดพลาด', 'ไม่สามารถเชื่อมต่อระบบได้', 'error');
+            }
+            showLoader(false);
+        }
+
+        async function handleFormSubmit(e) {
+            e.preventDefault();
+            
+            // Validate Missing Data (HTML5 required attributes handle most of this, but double check)
+            const requiredIds = ['testDate', 'department', 'machineId', 'controlLot', 'controlExp', 'stripLot', 'stripExp', 'l1Result', 'l2Result', 'tester'];
+            for(let id of requiredIds) {
+                if(!document.getElementById(id).value.trim()) {
+                    Swal.fire('ข้อมูลไม่ครบถ้วน', 'กรุณากรอกข้อมูลที่มีเครื่องหมาย * ให้ครบถ้วน', 'warning');
+                    return;
+                }
+            }
+
+            const l1 = parseFloat(document.getElementById('l1Result').value);
+            const l2 = parseFloat(document.getElementById('l2Result').value);
+            
+            const formData = {
+                testDate: document.getElementById('testDate').value,
+                department: document.getElementById('department').value,
+                machineId: document.getElementById('machineId').value.toUpperCase(),
+                controlLot: document.getElementById('controlLot').value.toUpperCase(),
+                controlExp: document.getElementById('controlExp').value,
+                stripLot: document.getElementById('stripLot').value.toUpperCase(),
+                stripExp: document.getElementById('stripExp').value,
+                l1Result: l1,
+                l2Result: l2,
+                l1Status: getStatusFromValue(l1, 1),
+                l2Status: getStatusFromValue(l2, 2),
+                tester: document.getElementById('tester').value
+            };
+
+            const recordId = document.getElementById('recordId').value;
+            const action = recordId ? 'update' : 'add';
+            if (recordId) formData.id = recordId;
+
+            showLoader(true);
+            try {
+                const res = await gasRequest({ action: action, data: formData });
+                if (res.status === 'success') {
+                    Swal.fire({
+                        icon: 'success', title: 'บันทึกสำเร็จ',
+                        text: res.message, timer: 2000, showConfirmButton: false
+                    });
+                    clearForm();
+                    if(isLoggedIn && !document.getElementById('view-dashboard').classList.contains('hidden')){
+                        loadDashboardData();
+                    }
+                } else {
+                    Swal.fire('ข้อผิดพลาด', res.message, 'error');
+                }
+            } catch (error) {
+                Swal.fire('ข้อผิดพลาด', 'เชื่อมต่อฐานข้อมูลล้มเหลว', 'error');
+            }
+            showLoader(false);
+        }
+
+        function clearForm() {
+            document.getElementById('iqcForm').reset();
+            document.getElementById('recordId').value = "";
+            document.getElementById('testDate').valueAsDate = new Date();
+            document.getElementById('l1Badge').classList.add('hidden');
+            document.getElementById('l2Badge').classList.add('hidden');
+            
+            const inputs = document.querySelectorAll('input[type="date"]');
+            inputs.forEach(el => el.classList.remove('border-red-500', 'bg-red-50', 'border-orange-400'));
+        }
+
+        async function handleLogin(e) {
+            e.preventDefault();
+            const u = document.getElementById('username').value;
+            const p = document.getElementById('password').value;
+            
+            showLoader(true);
+            try {
+                const res = await gasRequest({ action: 'login', username: u, password: p });
+                if (res.status === 'success') {
+                    isLoggedIn = true;
+                    document.getElementById('btn-logout').classList.remove('hidden');
+                    switchTab('dashboard');
+                    Swal.fire({ toast:true, icon:'success', title:'เข้าสู่ระบบสำเร็จ', position:'top-end', timer:2000, showConfirmButton:false });
+                    document.getElementById('loginForm').reset();
+                } else {
+                    Swal.fire('ล้มเหลว', res.message, 'error');
+                }
+            } catch(e) {
+                Swal.fire('ข้อผิดพลาด', 'ไม่สามารถเชื่อมต่อระบบได้', 'error');
+            }
+            showLoader(false);
+        }
+
+        function logout() {
+            isLoggedIn = false;
+            document.getElementById('btn-logout').classList.add('hidden');
+            switchTab('record');
+        }
+
+        // ==========================================
+        // DASHBOARD & ANALYTICS
+        // ==========================================
+        async function loadDashboardData() {
+            if(!isLoggedIn) return;
+            showLoader(true);
+            try {
+                // Fetch config (optional) and data
+                const configRes = await gasRequest({ action: 'getConfig' });
+                if(configRes.l1) qcConfig = configRes;
+
+                const res = await gasRequest({ action: 'get' });
+                if (res.status === 'success') {
+                    allRecords = res.data;
+                    // Sort descending by TestDate string normally or timestamp
+                    allRecords.sort((a, b) => new Date(b.Timestamp || b.TestDate) - new Date(a.Timestamp || a.TestDate));
+                    updateDashboardCards();
+                    renderTable();
+                    renderCharts();
+                } else {
+                    Swal.fire('คำเตือน', res.message, 'warning');
+                }
+            } catch (error) {
+                console.error(error);
+                Swal.fire('ข้อผิดพลาด', 'ไม่สามารถโหลดข้อมูลแดชบอร์ดได้', 'error');
+            }
+            showLoader(false);
+        }
+
+        function updateDashboardCards() {
+            const total = allRecords.length;
+            let passCount = 0;
+            let failCount = 0;
+            let expiringCount = 0;
+            
+            const today = new Date();
+            today.setHours(0,0,0,0);
+            const thirtyDaysFromNow = new Date(today);
+            thirtyDaysFromNow.setDate(thirtyDaysFromNow.getDate() + 30);
+
+            allRecords.forEach(r => {
+                // Pass/Fail
+                if(r.L1_Status === 'Pass' && r.L2_Status === 'Pass') passCount++;
+                else failCount++;
+
+                // Expiry
+                const cExp = new Date(r.ControlExp);
+                const sExp = new Date(r.StripExp);
+                if (cExp <= thirtyDaysFromNow || sExp <= thirtyDaysFromNow) expiringCount++;
+            });
+
+            const passRate = total > 0 ? Math.round((passCount / total) * 100) : 0;
+
+            document.getElementById('kpi-total').innerText = total;
+            document.getElementById('kpi-pass-rate').innerText = passRate + '%';
+            document.getElementById('kpi-fail').innerText = failCount;
+            document.getElementById('kpi-expiring').innerText = expiringCount;
+        }
+
+        function filterTableByStatus(status) {
+            currentFilter = status; // e.g. "Fail"
+            document.getElementById('searchInput').value = '';
+            renderTable();
+        }
+        function filterTableByExpiry() {
+            currentFilter = 'Expiring';
+            document.getElementById('searchInput').value = '';
+            renderTable();
+        }
+
+        function renderTable() {
+            const tbody = document.getElementById('dataTableBody');
+            const emptyState = document.getElementById('emptyState');
+            const search = document.getElementById('searchInput').value.toLowerCase();
+            
+            tbody.innerHTML = '';
+            let filtered = allRecords;
+
+            // Apply specific filters
+            if (currentFilter === 'Fail') {
+                filtered = filtered.filter(r => r.L1_Status !== 'Pass' || r.L2_Status !== 'Pass');
+            } else if (currentFilter === 'Expiring') {
+                const today = new Date();
+                const limit = new Date(); limit.setDate(limit.getDate() + 30);
+                filtered = filtered.filter(r => new Date(r.ControlExp) <= limit || new Date(r.StripExp) <= limit);
+            }
+
+            // Apply search filter
+            if (search) {
+                filtered = filtered.filter(r => 
+                    (r.Department && r.Department.toLowerCase().includes(search)) ||
+                    (r.MachineID && r.MachineID.toLowerCase().includes(search)) ||
+                    (r.Tester && r.Tester.toLowerCase().includes(search))
+                );
+            }
+
+            if (filtered.length === 0) {
+                emptyState.classList.remove('hidden');
+                emptyState.classList.add('flex');
+                return;
+            } else {
+                emptyState.classList.add('hidden');
+                emptyState.classList.remove('flex');
+            }
+
+            filtered.forEach(r => {
+                const tr = document.createElement('tr');
+                tr.className = "bg-white/30 border-b border-slate-100/50 hover:bg-white/80 transition-all duration-200";
+                
+                const formatStatus = (status) => {
+                    if(status === 'Pass') return `<span class="bg-emerald-100 text-emerald-700 text-xs font-bold px-2.5 py-1 rounded-md">ผ่าน</span>`;
+                    return `<span class="bg-rose-100 text-rose-700 text-xs font-bold px-2.5 py-1 rounded-md">ไม่ผ่าน</span>`;
+                };
+
+                const overallStatus = (r.L1_Status === 'Pass' && r.L2_Status === 'Pass') 
+                    ? `<i class="fa-solid fa-circle-check text-emerald-500 text-xl drop-shadow-sm"></i>` 
+                    : `<i class="fa-solid fa-circle-xmark text-rose-500 text-xl drop-shadow-sm"></i>`;
+
+                // Date formatter
+                const d = new Date(r.TestDate);
+                const dateStr = !isNaN(d) ? d.toLocaleDateString('th-TH', { year: '2-digit', month: 'short', day: 'numeric' }) : r.TestDate;
+
+                tr.innerHTML = `
+                    <td class="px-5 py-4">${dateStr}</td>
+                    <td class="px-5 py-4 font-medium text-slate-800 cursor-pointer hover:text-violet-600 underline decoration-dashed" onclick="drillDown('${r.Department}')">${r.Department}</td>
+                    <td class="px-5 py-4 cursor-pointer hover:text-violet-600 underline decoration-dashed" onclick="drillDown('${r.MachineID}')">${r.MachineID}</td>
+                    <td class="px-5 py-4 text-center font-medium">${r.L1_Result}</td>
+                    <td class="px-5 py-4 text-center font-medium">${r.L2_Result}</td>
+                    <td class="px-5 py-4 text-center">${overallStatus}</td>
+                    <td class="px-5 py-4 text-slate-500">${r.Tester}</td>
+                    <td class="px-5 py-4 text-right">
+                        <button onclick="editRecord('${r.ID}')" class="text-indigo-400 hover:text-indigo-600 mr-3 transition-colors" title="แก้ไข"><i class="fa-solid fa-pen-to-square text-lg"></i></button>
+                        <button onclick="deleteRecord('${r.ID}')" class="text-rose-400 hover:text-rose-600 transition-colors" title="ลบ"><i class="fa-solid fa-trash text-lg"></i></button>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+
+            // Reset specific filter after rendering so next search applies to all
+            currentFilter = ''; 
+        }
+
+        function drillDown(term) {
+            document.getElementById('searchInput').value = term;
+            renderTable();
+            // Scroll to table
+            document.getElementById('searchInput').scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+
+        function editRecord(id) {
+            const r = allRecords.find(x => x.ID === id);
+            if(!r) return;
+            
+            // Format dates for input type="date"
+            const formatDate = (dateString) => {
+                if(!dateString) return '';
+                const d = new Date(dateString);
+                if(isNaN(d)) return dateString;
+                return d.toISOString().split('T')[0];
+            };
+
+            document.getElementById('recordId').value = r.ID;
+            document.getElementById('testDate').value = formatDate(r.TestDate);
+            document.getElementById('department').value = r.Department;
+            document.getElementById('machineId').value = r.MachineID;
+            document.getElementById('controlLot').value = r.ControlLot;
+            document.getElementById('controlExp').value = formatDate(r.ControlExp);
+            document.getElementById('stripLot').value = r.StripLot;
+            document.getElementById('stripExp').value = formatDate(r.StripExp);
+            document.getElementById('l1Result').value = r.L1_Result;
+            document.getElementById('l2Result').value = r.L2_Result;
+            document.getElementById('tester').value = r.Tester;
+            
+            evaluateQC();
+            switchTab('record');
+            
+            Swal.fire({
+                toast: true, position: 'top-end', icon: 'info',
+                title: 'เข้าสู่โหมดแก้ไขข้อมูล', showConfirmButton: false, timer: 3000
+            });
+        }
+
+        async function deleteRecord(id) {
+            const confirm = await Swal.fire({
+                title: 'ยืนยันการลบ?',
+                text: "ข้อมูลนี้จะถูกลบออกจากฐานข้อมูลอย่างถาวร!",
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#d33',
+                cancelButtonColor: '#3085d6',
+                confirmButtonText: 'ใช่, ลบเลย!',
+                cancelButtonText: 'ยกเลิก'
+            });
+
+            if(confirm.isConfirmed) {
+                showLoader(true);
+                try {
+                    const res = await gasRequest({ action: 'delete', id: id });
+                    if(res.status === 'success') {
+                        Swal.fire('ลบแล้ว!', 'ลบข้อมูลเรียบร้อยแล้ว', 'success');
+                        loadDashboardData();
+                    } else {
+                        Swal.fire('ข้อผิดพลาด', res.message, 'error');
+                    }
+                } catch(e) {
+                    Swal.fire('ข้อผิดพลาด', 'ลบข้อมูลไม่สำเร็จ', 'error');
+                }
+                showLoader(false);
+            }
+        }
+
+        function renderCharts() {
+            // Prepare Data for Trend Chart (Last 15 records sorted chronologically)
+            const trendData = [...allRecords].sort((a, b) => new Date(a.TestDate) - new Date(b.TestDate)).slice(-15);
+            const labels = trendData.map(r => {
+                const d = new Date(r.TestDate);
+                return !isNaN(d) ? `${d.getDate()}/${d.getMonth()+1}` : '';
+            });
+            const l1Data = trendData.map(r => r.L1_Result);
+            const l2Data = trendData.map(r => r.L2_Result);
+
+            if(trendChartInstance) trendChartInstance.destroy();
+            const ctxTrend = document.getElementById('trendChart').getContext('2d');
+            trendChartInstance = new Chart(ctxTrend, {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: [
+                        { label: 'Level 1', data: l1Data, borderColor: '#8b5cf6', backgroundColor: 'rgba(139, 92, 246, 0.15)', tension: 0.4, fill: true, pointBackgroundColor: '#8b5cf6' },
+                        { label: 'Level 2', data: l2Data, borderColor: '#ec4899', backgroundColor: 'rgba(236, 72, 153, 0.15)', tension: 0.4, fill: true, pointBackgroundColor: '#ec4899' }
+                    ]
+                },
+                options: {
+                    responsive: true, maintainAspectRatio: false,
+                    plugins: { legend: { position: 'top', labels: { usePointStyle: true, boxWidth: 8 } } },
+                    scales: { 
+                        y: { beginAtZero: false, grid: { borderDash: [4, 4], color: '#f1f5f9' } },
+                        x: { grid: { display: false } }
+                    }
+                }
+            });
+
+            // Prepare Data for Department Pie Chart
+            const deptCounts = {};
+            allRecords.forEach(r => {
+                const dept = r.Department || 'ไม่ระบุ';
+                deptCounts[dept] = (deptCounts[dept] || 0) + 1;
+            });
+            const deptLabels = Object.keys(deptCounts);
+            const deptData = Object.values(deptCounts);
+            
+            // Soft pastel palette for pie chart
+            const pieColors = ['#8b5cf6', '#ec4899', '#06b6d4', '#f59e0b', '#10b981', '#6366f1', '#f43f5e'];
+
+            if(deptChartInstance) deptChartInstance.destroy();
+            const ctxDept = document.getElementById('deptChart').getContext('2d');
+            deptChartInstance = new Chart(ctxDept, {
+                type: 'doughnut',
+                data: {
+                    labels: deptLabels,
+                    datasets: [{ data: deptData, backgroundColor: pieColors.slice(0, deptLabels.length), borderWidth: 2, borderColor: '#ffffff', hoverOffset: 4 }]
+                },
+                options: {
+                    responsive: true, maintainAspectRatio: false,
+                    plugins: { legend: { position: 'right', labels: { usePointStyle: true, padding: 20 } } },
+                    cutout: '75%'
+                }
+            });
+        }
+    </script>
+</body>
+</html>
