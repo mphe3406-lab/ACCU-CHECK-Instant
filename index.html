@@ -3,923 +3,915 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ระบบควบคุมคุณภาพ IQC DTX - รพ.หนองสองห้อง</title>
+    <title>IQC ACCU-CHEK Instant | โรงพยาบาลหนองสองห้อง</title>
+    
+    <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- SweetAlert2 -->
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    
+    <!-- Chart.js -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     
-    <script>
-        tailwind.config = {
-            theme: {
-                extend: {
-                    fontFamily: { sans: ['Kanit', 'sans-serif'] },
-                    colors: { 
-                        primary: '#8b5cf6', // Soft Violet
-                        secondary: '#ec4899', // Soft Pink
-                        dark: '#475569', // Slate 600 (Softer than dark gray)
-                        surface: 'rgba(255, 255, 255, 0.7)'
-                    }
-                }
-            }
-        }
-    </script>
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
     <style>
-        @keyframes gradientBG {
-            0% { background-position: 0% 50%; }
-            50% { background-position: 100% 50%; }
-            100% { background-position: 0% 50%; }
-        }
         body { 
-            font-family: 'Kanit', sans-serif; 
-            background: linear-gradient(-45deg, #f8fafc, #f3e8ff, #fdf4ff, #eff6ff);
-            background-size: 400% 400%;
-            animation: gradientBG 15s ease infinite;
+            font-family: 'Sarabun', sans-serif; 
+            background-color: #faf5ff; /* Soft Pastel Purple (purple-50) */ 
+            color: #4b5563;
         }
-        .tab-active { 
-            background: linear-gradient(to right, #ede9fe, #fce7f3);
-            color: #7c3aed; 
-            font-weight: 600; 
-            border-radius: 1rem;
-            box-shadow: 0 4px 6px -1px rgba(139, 92, 246, 0.1);
-        }
-        .tab-inactive { color: #64748b; font-weight: 500; border-radius: 1rem; }
-        .tab-inactive:hover { background-color: rgba(255,255,255,0.5); }
         
-        .glass-panel { 
-            background: rgba(255, 255, 255, 0.65); 
-            backdrop-filter: blur(16px); 
-            -webkit-backdrop-filter: blur(16px);
-            border: 1px solid rgba(255, 255, 255, 0.8);
-            box-shadow: 0 10px 40px -10px rgba(139, 92, 246, 0.1);
+        .tab-content { display: none; }
+        .tab-content.active { display: block; animation: fadeIn 0.4s cubic-bezier(0.4, 0, 0.2, 1); }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(15px); } to { opacity: 1; transform: translateY(0); } }
+        
+        /* Custom Pastel Loader */
+        .loader {
+            border: 4px solid #f3f3f3; 
+            border-top: 4px solid #c084fc; /* purple-400 */ 
+            border-radius: 50%;
+            width: 45px; height: 45px; 
+            animation: spin 1s linear infinite; 
+            margin: 30px auto;
         }
-        .glass-input {
-            background: rgba(255, 255, 255, 0.7);
-            border: 1px solid rgba(226, 232, 240, 0.8);
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        
+        /* Soft Custom Input Styling */
+        input:not([type="radio"]), select, textarea {
+            width: 100%; padding: 0.6rem 1rem; 
+            border: 1px solid #e5e7eb; 
+            border-radius: 1rem; /* Softer rounded corners */
+            outline: none; 
+            background-color: #ffffff;
             transition: all 0.3s ease;
         }
-        .glass-input:focus {
-            background: rgba(255, 255, 255, 1);
-            border-color: #a78bfa;
-            box-shadow: 0 0 0 4px rgba(167, 139, 250, 0.2);
-            outline: none;
+        input:focus:not([type="radio"]), select:focus, textarea:focus {
+            border-color: #c084fc; 
+            box-shadow: 0 0 0 4px rgba(192, 132, 252, 0.15); /* Soft purple glow */
         }
-        .loader { border-top-color: #8b5cf6; -webkit-animation: spinner 1.5s linear infinite; animation: spinner 1.5s linear infinite; }
-        @keyframes spinner { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
         
-        /* Custom smooth scrollbar */
+        /* Custom Scrollbar for tables */
         ::-webkit-scrollbar { width: 8px; height: 8px; }
-        ::-webkit-scrollbar-track { background: transparent; }
-        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
-        ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+        ::-webkit-scrollbar-track { background: #f3f4f6; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb { background: #d8b4fe; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #c084fc; }
     </style>
 </head>
-<body class="text-gray-800 h-screen flex flex-col overflow-hidden">
+<body class="antialiased selection:bg-purple-200 selection:text-purple-900">
 
-    <nav class="bg-white/40 backdrop-blur-md border-b border-white/60 z-10 flex-shrink-0 transition-all shadow-sm">
+<div class="min-h-screen flex flex-col">
+    <!-- Header/Navbar (Pastel Gradient) -->
+    <nav class="bg-gradient-to-r from-purple-400 via-fuchsia-400 to-pink-400 text-white shadow-md sticky top-0 z-50">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div class="flex justify-between h-20 items-center">
-                <div class="flex items-center">
-                    <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-violet-400 to-pink-400 flex items-center justify-center shadow-lg shadow-violet-200 mr-3">
-                        <i class="fa-solid fa-truck-medical text-white text-xl"></i>
-                    </div>
-                    <span class="font-bold text-2xl text-transparent bg-clip-text bg-gradient-to-r from-violet-600 to-pink-500 hidden sm:block">IQC DTX System <span class="text-sm font-normal text-slate-500" style="-webkit-text-fill-color: #64748b;">รพ.หนองสองห้อง</span></span>
-                    <span class="font-bold text-xl text-transparent bg-clip-text bg-gradient-to-r from-violet-600 to-pink-500 sm:hidden">IQC DTX</span>
+            <div class="flex justify-between h-16">
+                <div class="flex items-center drop-shadow-sm">
+                    <i class="fas fa-heart text-2xl mr-3 text-pink-100"></i>
+                    <span class="font-bold text-lg sm:text-xl truncate tracking-wide">IQC ACCU-CHEK<br><span class="text-xs text-purple-100 font-medium font-light">รพ.หนองสองห้อง</span></span>
                 </div>
-                <div class="flex space-x-1 sm:space-x-4 items-center">
-                    <button onclick="switchTab('record')" id="tab-record" class="tab-active px-3 sm:px-5 py-2.5 text-sm sm:text-base transition-all duration-300">
-                        <i class="fa-solid fa-pen-to-square mr-1"></i> บันทึกผล
-                    </button>
-                    <button onclick="switchTab('dashboard')" id="tab-dashboard" class="tab-inactive px-3 sm:px-5 py-2.5 text-sm sm:text-base transition-all duration-300">
-                        <i class="fa-solid fa-chart-pie mr-1"></i> แดชบอร์ด
-                    </button>
-                    <button onclick="logout()" id="btn-logout" class="hidden text-rose-400 hover:text-rose-600 hover:bg-rose-50 rounded-xl px-4 py-2.5 text-sm font-medium transition-all duration-200">
-                        <i class="fa-solid fa-arrow-right-from-bracket"></i>
-                    </button>
+                <div class="flex items-center space-x-1 sm:space-x-3">
+                    <button onclick="switchTab('form')" id="btn-tab-form" class="px-3 sm:px-4 py-2 rounded-xl text-sm font-medium bg-white/20 backdrop-blur-md shadow-sm transition"><i class="fas fa-pen-nib mr-1"></i> บันทึก</button>
+                    <button onclick="switchTab('dashboard')" id="btn-tab-dashboard" class="px-3 sm:px-4 py-2 rounded-xl text-sm font-medium hover:bg-white/20 transition"><i class="fas fa-chart-line mr-1"></i> รายงาน</button>
+                    <button onclick="switchTab('admin')" id="btn-tab-admin" class="px-3 sm:px-4 py-2 rounded-xl text-sm font-medium hover:bg-white/20 transition"><i class="fas fa-magic mr-1"></i> จัดการ</button>
                 </div>
             </div>
         </div>
     </nav>
 
-    <!-- Global Loader -->
-    <main class="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8 relative">
+    <!-- Main Content -->
+    <main class="flex-grow p-4 sm:p-6 lg:p-8 max-w-7xl mx-auto w-full">
         
-        <!-- View: Record Form -->
-        <div id="view-record" class="max-w-4xl mx-auto transition-opacity duration-300">
-            <div class="glass-panel rounded-[2rem] p-6 sm:p-10 relative overflow-hidden">
-                <!-- Decorative background elements -->
-                <div class="absolute -top-24 -right-24 w-48 h-48 bg-purple-200 rounded-full mix-blend-multiply filter blur-2xl opacity-50"></div>
-                <div class="absolute -bottom-24 -left-24 w-48 h-48 bg-pink-200 rounded-full mix-blend-multiply filter blur-2xl opacity-50"></div>
+        <!-- ======================= TAB 1: FORM ======================= -->
+        <div id="tab-form" class="tab-content active max-w-3xl mx-auto">
+            <div class="bg-white rounded-2xl shadow-[0_8px_30px_rgb(0,0,0,0.04)] overflow-hidden border border-purple-50">
                 
-                <div class="flex justify-between items-center mb-8 border-b border-gray-100/50 pb-5 relative z-10">
-                    <h2 class="text-2xl font-bold text-dark flex items-center">
-                        <span class="bg-pink-100 text-pink-500 w-10 h-10 rounded-xl flex items-center justify-center mr-3 shadow-sm"><i class="fa-solid fa-flask-vial"></i></span> 
-                        บันทึกผลควบคุมคุณภาพ (IQC)
-                    </h2>
-                    <span class="bg-white/80 border border-violet-100 text-violet-700 shadow-sm text-xs font-semibold px-3 py-1 rounded-full">ACCU-CHEK Instant</span>
+                <div class="bg-purple-50/70 px-6 py-5 border-b border-purple-100 flex justify-between items-center">
+                    <h2 class="text-xl font-bold text-purple-800 flex items-center"><i class="fas fa-clipboard-check mr-2 text-purple-400 text-2xl"></i> แบบฟอร์มบันทึกผล IQC</h2>
+                    <span class="text-xs font-medium px-3 py-1.5 bg-white text-purple-600 rounded-full shadow-sm border border-purple-100 flex items-center"><i class="far fa-calendar-alt mr-1"></i> <span id="current-date-badge"></span></span>
                 </div>
-
-                <form id="iqcForm" class="space-y-6 relative z-10">
-                    <input type="hidden" id="recordId" value="">
-                    
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
-                        <!-- ส่วนข้อมูลทั่วไป -->
-                        <div class="space-y-5 bg-white/40 p-6 rounded-2xl border border-white/60 shadow-sm">
-                            <h3 class="font-semibold text-lg text-violet-600 flex items-center"><i class="fa-regular fa-clipboard mr-2"></i> ข้อมูลทั่วไป</h3>
+                
+                <form id="iqcForm" class="p-6 sm:p-8 space-y-8">
+                    <!-- ส่วนที่ 1: ข้อมูลทั่วไป -->
+                    <div class="space-y-4">
+                        <h3 class="text-lg font-semibold text-purple-700 border-b border-purple-100 pb-2 flex items-center"><span class="bg-purple-100 text-purple-600 w-6 h-6 rounded-full flex items-center justify-center text-sm mr-2">1</span> ข้อมูลทั่วไป</h3>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
                             <div>
-                                <label class="block text-sm font-medium text-slate-600 mb-1.5">วันที่ทดสอบ <span class="text-rose-500">*</span></label>
-                                <input type="date" id="testDate" required class="glass-input w-full rounded-xl p-3">
+                                <label class="block text-sm font-medium text-gray-700 mb-1.5">วันที่ทดสอบ <span class="text-pink-500">*</span></label>
+                                <input type="date" id="TestDate" required class="text-gray-600">
                             </div>
                             <div>
-                                <label class="block text-sm font-medium text-slate-600 mb-1.5">หน่วยงาน <span class="text-rose-500">*</span></label>
-                                <select id="department" required class="glass-input w-full rounded-xl p-3">
+                                <label class="block text-sm font-medium text-gray-700 mb-1.5">หน่วยงาน <span class="text-pink-500">*</span></label>
+                                <select id="Department" required onchange="checkOtherSelect(this, 'DeptOtherContainer', 'DeptOther')" class="text-gray-600">
                                     <option value="">-- เลือกหน่วยงาน --</option>
-                                    <option value="OPD">OPD</option>
-                                    <option value="ER">ER</option>
-                                    <option value="MED">MED</option>
-                                    <option value="PC">PC</option>
-                                    <option value="IPDชาย">IPDชาย</option>
-                                    <option value="IPDหญิง">IPDหญิง</option>
-                                    <option value="ICU">ICU</option>
-                                    <option value="LR">LR</option>
-                                    <option value="OR">OR</option>
-                                    <option value="NCD">NCD</option>
-                                    <option value="PCU">PCU</option>
-                                    <option value="ส่งเสริม">ส่งเสริม</option>
-                                    <option value="TB clinic">TB clinic</option>
-                                    <option value="LAB">ห้องปฏิบัติการ (LAB)</option>
-                                    <option value="อื่นๆ">อื่นๆ</option>
+                                    <option value="อุบัติเหตุฉุกเฉิน">อุบัติเหตุฉุกเฉิน</option>
+                                    <option value="ผู้ป่วยนอก">ผู้ป่วยนอก</option>
+                                    <option value="ผู้ป่วยในชาย">ผู้ป่วยในชาย</option>
+                                    <option value="ผู้ป่วยในหญิง">ผู้ป่วยในหญิง</option>
+                                    <option value="คลินิกเฉพาะโรค">คลินิกเฉพาะโรค</option>
+                                    <option value="ห้องคลอด">ห้องคลอด</option>
+                                    <option value="ANC">ANC</option>
+                                    <option value="ห้องปฏิบัติการ">ห้องปฏิบัติการ</option>
+                                    <option value="Other">อื่นๆ (โปรดระบุ)</option>
                                 </select>
+                                <div id="DeptOtherContainer" class="hidden mt-2">
+                                    <input type="text" id="DeptOther" placeholder="ระบุหน่วยงาน...">
+                                </div>
                             </div>
                             <div>
-                                <label class="block text-sm font-medium text-slate-600 mb-1.5">รหัสเครื่อง / หมายเลขเครื่อง <span class="text-rose-500">*</span></label>
-                                <input type="text" id="machineId" required placeholder="เช่น ACC-OPD-01" class="glass-input w-full rounded-xl p-3 uppercase placeholder:text-slate-300">
+                                <label class="block text-sm font-medium text-gray-700 mb-1.5">ผู้ทดสอบ <span class="text-pink-500">*</span></label>
+                                <input type="text" id="TesterName" placeholder="ชื่อ-สกุล" required>
                             </div>
                             <div>
-                                <label class="block text-sm font-medium text-slate-600 mb-1.5">ผู้ทดสอบ <span class="text-rose-500">*</span></label>
-                                <input type="text" id="tester" required placeholder="ชื่อ-สกุล หรือรหัสพนักงาน" class="glass-input w-full rounded-xl p-3 placeholder:text-slate-300">
-                            </div>
-                        </div>
-
-                        <!-- ส่วนข้อมูลน้ำยาและผล -->
-                        <div class="space-y-5 bg-white/40 p-6 rounded-2xl border border-white/60 shadow-sm">
-                            <h3 class="font-semibold text-lg text-pink-500 flex items-center"><i class="fa-solid fa-vials mr-2"></i> วัสดุทดสอบ และผลลัพธ์</h3>
-                            
-                            <div class="grid grid-cols-2 gap-4">
-                                <div>
-                                    <label class="block text-xs font-medium text-slate-600 mb-1.5">Lot Control <span class="text-rose-500">*</span></label>
-                                    <input type="text" id="controlLot" required class="glass-input w-full rounded-xl p-2.5 uppercase text-sm">
-                                </div>
-                                <div>
-                                    <label class="block text-xs font-medium text-slate-600 mb-1.5">วันหมดอายุ Control <span class="text-rose-500">*</span></label>
-                                    <input type="date" id="controlExp" required class="glass-input w-full rounded-xl p-2.5 text-sm" onchange="checkExpiry(this)">
-                                </div>
-                            </div>
-                            
-                            <div class="grid grid-cols-2 gap-4">
-                                <div>
-                                    <label class="block text-xs font-medium text-slate-600 mb-1.5">Lot Strip <span class="text-rose-500">*</span></label>
-                                    <input type="text" id="stripLot" required class="glass-input w-full rounded-xl p-2.5 uppercase text-sm">
-                                </div>
-                                <div>
-                                    <label class="block text-xs font-medium text-slate-600 mb-1.5">วันหมดอายุ Strip <span class="text-rose-500">*</span></label>
-                                    <input type="date" id="stripExp" required class="glass-input w-full rounded-xl p-2.5 text-sm" onchange="checkExpiry(this)">
-                                </div>
-                            </div>
-
-                            <div class="p-5 bg-gradient-to-br from-violet-50 to-pink-50 rounded-2xl border border-white mt-4 shadow-inner">
-                                <div class="grid grid-cols-2 gap-5">
-                                    <div>
-                                        <label class="block text-sm font-medium text-slate-700 mb-2">ผล Level 1 (mg/dL) <span class="text-rose-500">*</span></label>
-                                        <input type="number" step="0.1" id="l1Result" required class="glass-input w-full rounded-xl p-3 text-center text-xl font-bold text-violet-700 shadow-sm" oninput="evaluateQC()">
-                                        <div id="l1Badge" class="mt-2 text-center text-xs font-bold py-1.5 rounded-lg shadow-sm hidden transition-all"></div>
-                                    </div>
-                                    <div>
-                                        <label class="block text-sm font-medium text-slate-700 mb-2">ผล Level 2 (mg/dL) <span class="text-rose-500">*</span></label>
-                                        <input type="number" step="0.1" id="l2Result" required class="glass-input w-full rounded-xl p-3 text-center text-xl font-bold text-pink-600 shadow-sm" oninput="evaluateQC()">
-                                        <div id="l2Badge" class="mt-2 text-center text-xs font-bold py-1.5 rounded-lg shadow-sm hidden transition-all"></div>
-                                    </div>
-                                </div>
-                                <div class="mt-3 text-xs text-slate-500 text-center flex items-center justify-center" id="qcRangeHint">
-                                    <!-- Ranges will be dynamically populated -->
+                                <label class="block text-sm font-medium text-gray-700 mb-1.5">ตำแหน่ง <span class="text-pink-500">*</span></label>
+                                <select id="Position" required onchange="checkOtherSelect(this, 'PosOtherContainer', 'PosOther')" class="text-gray-600">
+                                    <option value="">-- เลือกตำแหน่ง --</option>
+                                    <option value="พยาบาลวิชาชีพ">พยาบาลวิชาชีพ</option>
+                                    <option value="นักเทคนิคการแพทย์">นักเทคนิคการแพทย์</option>
+                                    <option value="นักวิชาการสาธารณสุข">นักวิชาการสาธารณสุข</option>
+                                    <option value="พนักงานช่วยเหลือคนไข้">พนักงานช่วยเหลือคนไข้</option>
+                                    <option value="Other">อื่นๆ (โปรดระบุ)</option>
+                                </select>
+                                <div id="PosOtherContainer" class="hidden mt-2">
+                                    <input type="text" id="PosOther" placeholder="ระบุตำแหน่ง...">
                                 </div>
                             </div>
                         </div>
                     </div>
 
-                    <div class="flex justify-end space-x-4 pt-6 border-t border-gray-100/50">
-                        <button type="button" onclick="clearForm()" class="px-6 py-3 bg-white border border-slate-200 hover:bg-slate-50 hover:text-slate-800 text-slate-600 rounded-xl font-medium transition-all shadow-sm">
-                            <i class="fa-solid fa-eraser mr-1"></i> ล้างข้อมูล
-                        </button>
-                        <button type="submit" class="px-8 py-3 bg-gradient-to-r from-violet-500 to-pink-500 hover:from-violet-600 hover:to-pink-600 text-white rounded-xl font-medium shadow-lg shadow-pink-500/30 transition-all hover:-translate-y-0.5 active:scale-95">
-                            <i class="fa-solid fa-save mr-1"></i> บันทึกผล IQC
-                        </button>
+                    <!-- ส่วนที่ 2: ข้อมูลเครื่องและน้ำยา -->
+                    <div class="space-y-4">
+                        <h3 class="text-lg font-semibold text-purple-700 border-b border-purple-100 pb-2 flex items-center"><span class="bg-purple-100 text-purple-600 w-6 h-6 rounded-full flex items-center justify-center text-sm mr-2">2</span> ข้อมูลเครื่องมือและน้ำยา</h3>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1.5">ชื่อเครื่อง/รหัสเครื่อง <span class="text-pink-500">*</span></label>
+                                <input type="text" id="DeviceName" placeholder="เช่น ACCU-01" required>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1.5">สถานะแบตเตอรี่ <span class="text-pink-500">*</span></label>
+                                <div class="flex items-center space-x-4 mt-3 bg-gray-50 p-3 rounded-xl border border-gray-100">
+                                    <label class="inline-flex items-center cursor-pointer">
+                                        <input type="radio" name="BatteryStatus" value="แบตเตอรี่ปกติ" class="form-radio h-5 w-5 text-purple-500 border-gray-300 focus:ring-purple-400" required>
+                                        <span class="ml-2 text-sm text-gray-700"><i class="fas fa-battery-full text-green-400 mr-1"></i> ปกติ</span>
+                                    </label>
+                                    <label class="inline-flex items-center cursor-pointer">
+                                        <input type="radio" name="BatteryStatus" value="แบตเตอรี่ต่ำ" class="form-radio h-5 w-5 text-pink-500 border-gray-300 focus:ring-pink-400">
+                                        <span class="ml-2 text-sm text-gray-700"><i class="fas fa-battery-quarter text-pink-400 mr-1"></i> ต่ำ</span>
+                                    </label>
+                                </div>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1.5">Lot. Strip <span class="text-pink-500">*</span></label>
+                                <input type="text" id="StripLot" placeholder="ระบุเลข Lot" required>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1.5">วันหมดอายุของ Strip <span class="text-pink-500">*</span></label>
+                                <input type="date" id="StripExpiry" required onchange="checkExpiry(this.value)" class="text-gray-600">
+                                <p id="expiry-warning" class="text-xs text-pink-500 font-bold hidden mt-2 bg-pink-50 p-2 rounded-lg"><i class="fas fa-exclamation-circle"></i> Strip หมดอายุแล้ว!</p>
+                            </div>
+                        </div>
                     </div>
+
+                    <!-- ส่วนที่ 3: ผลการทดสอบ -->
+                    <div class="space-y-4">
+                        <h3 class="text-lg font-semibold text-purple-700 border-b border-purple-100 pb-2 flex items-center"><span class="bg-purple-100 text-purple-600 w-6 h-6 rounded-full flex items-center justify-center text-sm mr-2">3</span> ผลการทดสอบ (IQC Results)</h3>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div class="bg-gradient-to-b from-purple-50/50 to-white p-5 rounded-2xl border border-purple-100 shadow-sm transition hover:shadow-md">
+                                <label class="block text-sm font-bold text-purple-800 mb-2 text-center">Level 1 <br><span class="font-normal text-xs text-purple-500">(เกณฑ์ 30-60 mg/dl)</span> <span class="text-pink-500">*</span></label>
+                                <input type="number" id="L1_Result" step="0.1" required class="text-2xl font-bold text-center text-purple-700 placeholder-purple-200" placeholder="0.0" oninput="evaluateStatus()">
+                                <p id="L1-eval" class="text-sm mt-3 text-center h-5"></p>
+                            </div>
+                            <div class="bg-gradient-to-b from-fuchsia-50/50 to-white p-5 rounded-2xl border border-fuchsia-100 shadow-sm transition hover:shadow-md">
+                                <label class="block text-sm font-bold text-fuchsia-800 mb-2 text-center">Level 2 <br><span class="font-normal text-xs text-fuchsia-500">(เกณฑ์ 252-342 mg/dl)</span> <span class="text-pink-500">*</span></label>
+                                <input type="number" id="L2_Result" step="0.1" required class="text-2xl font-bold text-center text-fuchsia-700 placeholder-fuchsia-200" placeholder="0.0" oninput="evaluateStatus()">
+                                <p id="L2-eval" class="text-sm mt-3 text-center h-5"></p>
+                            </div>
+                        </div>
+                        
+                        <div class="mt-8 text-center bg-purple-50 p-6 rounded-2xl border border-purple-100 relative overflow-hidden">
+                            <!-- Background decoration -->
+                            <div class="absolute -top-10 -right-10 text-purple-100 opacity-50"><i class="fas fa-vial text-9xl"></i></div>
+                            
+                            <h4 class="text-sm font-bold text-purple-500 mb-3 relative z-10 uppercase tracking-wider">สรุปผลการประเมินอัตโนมัติ</h4>
+                            <div id="FinalStatusDisplay" class="text-3xl font-bold text-gray-300 relative z-10 transition-colors">รอข้อมูล...</div>
+                            <input type="hidden" id="FinalStatus">
+                            <p class="text-xs text-purple-400 mt-3 relative z-10"><i class="fas fa-info-circle"></i> หากผล "ไม่ผ่าน" ให้นำเครื่องตรวจสอบที่ห้องปฏิบัติการทันที</p>
+                        </div>
+                    </div>
+
+                    <button type="submit" id="btnSubmit" class="w-full bg-gradient-to-r from-purple-500 to-fuchsia-500 hover:from-purple-600 hover:to-fuchsia-600 text-white font-bold py-4 px-4 rounded-2xl shadow-[0_8px_20px_rgba(192,132,252,0.3)] transition-all duration-300 transform hover:-translate-y-0.5 flex justify-center items-center text-lg mt-8">
+                        <i class="fas fa-paper-plane mr-2"></i> บันทึกข้อมูล
+                    </button>
                 </form>
             </div>
         </div>
 
-        <!-- View: Dashboard -->
-        <div id="view-dashboard" class="hidden max-w-7xl mx-auto pb-10">
+        <!-- ======================= TAB 2: DASHBOARD ======================= -->
+        <div id="tab-dashboard" class="tab-content">
+            <div class="flex flex-col sm:flex-row justify-between items-center mb-8 gap-4">
+                <h2 class="text-2xl font-bold text-purple-800 flex items-center"><i class="fas fa-chart-bar mr-2 text-fuchsia-400"></i> รายงานสรุปผล (Dashboard)</h2>
+                <button onclick="loadDashboardData()" class="bg-white text-purple-600 px-4 py-2 rounded-xl shadow-sm border border-purple-100 hover:bg-purple-50 transition flex items-center text-sm font-medium"><i class="fas fa-sync-alt mr-2 text-purple-400"></i> รีเฟรชข้อมูล</button>
+            </div>
+
+            <div id="dashboard-loader" class="loader" style="display:none;"></div>
             
-            <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-8 bg-white/50 backdrop-blur-md p-5 rounded-2xl border border-white/60 shadow-sm">
-                <h2 class="text-2xl font-bold text-dark flex items-center">
-                    <span class="w-10 h-10 rounded-xl bg-violet-100 text-violet-600 flex items-center justify-center mr-3"><i class="fa-solid fa-chart-line"></i></span>
-                    Dashboard การควบคุมคุณภาพ
-                </h2>
-                <div class="mt-4 sm:mt-0 flex space-x-3 w-full sm:w-auto">
-                    <button onclick="loadDashboardData()" class="flex-1 sm:flex-none px-5 py-2.5 bg-white border border-slate-200 shadow-sm rounded-xl text-sm font-medium hover:bg-slate-50 text-slate-700 transition-all">
-                        <i class="fa-solid fa-rotate-right mr-1 text-violet-500"></i> รีเฟรช
-                    </button>
-                    <button onclick="setupGAS()" class="flex-1 sm:flex-none px-5 py-2.5 bg-amber-50 text-amber-700 border border-amber-200 shadow-sm rounded-xl text-sm font-medium hover:bg-amber-100 transition-all" title="สร้างตารางใน Google Sheets">
-                        <i class="fa-solid fa-wrench mr-1"></i> Setup DB
-                    </button>
+            <div id="dashboard-content" style="display:none;" class="space-y-6">
+                <!-- KPI Cards -->
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5">
+                    <div class="bg-white rounded-2xl shadow-sm p-5 border-l-4 border-purple-400 relative overflow-hidden group hover:shadow-md transition">
+                        <div class="absolute right-[-10px] top-[-10px] opacity-5 text-purple-500 text-6xl group-hover:scale-110 transition-transform"><i class="fas fa-vials"></i></div>
+                        <p class="text-sm text-purple-500 font-semibold mb-1">ทดสอบทั้งหมด</p>
+                        <p class="text-3xl font-bold text-gray-700" id="kpi-total">0</p>
+                        <p class="text-xs text-gray-400 mt-2">รายการ</p>
+                    </div>
+                    <div class="bg-white rounded-2xl shadow-sm p-5 border-l-4 border-emerald-400 relative overflow-hidden group hover:shadow-md transition">
+                        <div class="absolute right-[-10px] top-[-10px] opacity-5 text-emerald-500 text-6xl group-hover:scale-110 transition-transform"><i class="fas fa-check-circle"></i></div>
+                        <p class="text-sm text-emerald-500 font-semibold mb-1">ผ่านเกณฑ์ (Pass)</p>
+                        <p class="text-3xl font-bold text-emerald-600 flex items-baseline gap-2"><span id="kpi-pass-val">0</span> <span class="text-sm font-normal text-gray-400" id="kpi-pass-pct">(0%)</span></p>
+                    </div>
+                    <div class="bg-white rounded-2xl shadow-sm p-5 border-l-4 border-pink-400 relative overflow-hidden group hover:shadow-md transition">
+                        <div class="absolute right-[-10px] top-[-10px] opacity-5 text-pink-500 text-6xl group-hover:scale-110 transition-transform"><i class="fas fa-times-circle"></i></div>
+                        <p class="text-sm text-pink-500 font-semibold mb-1">ไม่ผ่าน (Fail)</p>
+                        <p class="text-3xl font-bold text-pink-500 flex items-baseline gap-2"><span id="kpi-fail-val">0</span> <span class="text-sm font-normal text-gray-400" id="kpi-fail-pct">(0%)</span></p>
+                    </div>
+                    <div class="bg-white rounded-2xl shadow-sm p-5 border-l-4 border-pink-400 relative overflow-hidden group hover:shadow-md transition">
+                        <div class="absolute right-[-10px] top-[-10px] opacity-5 text-pink-500 text-6xl group-hover:scale-110 transition-transform"><i class="fas fa-times-circle"></i></div>
+                        <p class="text-sm text-pink-500 font-semibold mb-1">ไม่ผ่าน (Fail)</p>
+                        <p class="text-3xl font-bold text-pink-500 flex items-baseline gap-2" id="kpi-fail">0 <span class="text-sm font-normal text-gray-400" id="kpi-fail-pct">(0%)</span></p>
+                    </div>
+                    <div class="bg-white rounded-2xl shadow-sm p-5 border-l-4 border-amber-400 relative overflow-hidden group hover:shadow-md transition">
+                        <div class="absolute right-[-10px] top-[-10px] opacity-5 text-amber-500 text-6xl group-hover:scale-110 transition-transform"><i class="fas fa-exclamation-triangle"></i></div>
+                        <p class="text-sm text-amber-500 font-semibold mb-1">ปัญหาอื่นๆ (แบต/หมดอายุ)</p>
+                        <p class="text-3xl font-bold text-amber-500" id="kpi-issue">0</p>
+                    </div>
                 </div>
-            </div>
 
-            <!-- KPI Cards -->
-            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5 mb-8">
-                <div class="glass-panel rounded-2xl p-6 flex items-center justify-between hover:scale-[1.02] transition-transform duration-300">
-                    <div>
-                        <p class="text-sm text-slate-500 font-semibold mb-1">จำนวนตรวจทั้งหมด</p>
-                        <h3 class="text-3xl font-bold text-slate-800" id="kpi-total">0</h3>
-                    </div>
-                    <div class="w-14 h-14 bg-gradient-to-br from-blue-100 to-indigo-100 rounded-2xl flex items-center justify-center text-indigo-500 text-2xl shadow-inner">
-                        <i class="fa-solid fa-vials"></i>
-                    </div>
-                </div>
-                <div class="glass-panel rounded-2xl p-6 flex items-center justify-between hover:scale-[1.02] transition-transform duration-300">
-                    <div>
-                        <p class="text-sm text-slate-500 font-semibold mb-1">อัตราผ่านเกณฑ์ QC</p>
-                        <h3 class="text-3xl font-bold text-emerald-600" id="kpi-pass-rate">0%</h3>
-                    </div>
-                    <div class="w-14 h-14 bg-gradient-to-br from-emerald-50 to-teal-100 rounded-2xl flex items-center justify-center text-emerald-500 text-2xl shadow-inner">
-                        <i class="fa-solid fa-check-circle"></i>
-                    </div>
-                </div>
-                <div class="glass-panel rounded-2xl p-6 flex items-center justify-between cursor-pointer hover:bg-rose-50 hover:scale-[1.02] transition-all duration-300 border-rose-100/50" onclick="filterTableByStatus('Fail')">
-                    <div>
-                        <p class="text-sm text-slate-500 font-semibold mb-1">จำนวนผลไม่ผ่าน</p>
-                        <h3 class="text-3xl font-bold text-rose-500" id="kpi-fail">0</h3>
-                    </div>
-                    <div class="w-14 h-14 bg-gradient-to-br from-rose-100 to-pink-100 rounded-2xl flex items-center justify-center text-rose-500 text-2xl shadow-inner">
-                        <i class="fa-solid fa-triangle-exclamation"></i>
-                    </div>
-                </div>
-                <div class="glass-panel rounded-2xl p-6 flex items-center justify-between cursor-pointer hover:bg-amber-50 hover:scale-[1.02] transition-all duration-300 border-amber-100/50" onclick="filterTableByExpiry()">
-                    <div>
-                        <p class="text-sm text-slate-500 font-semibold mb-1">ใกล้หมดอายุ</p>
-                        <h3 class="text-3xl font-bold text-amber-500" id="kpi-expiring">0</h3>
-                    </div>
-                    <div class="w-14 h-14 bg-gradient-to-br from-amber-100 to-orange-100 rounded-2xl flex items-center justify-center text-amber-500 text-2xl shadow-inner">
-                        <i class="fa-solid fa-clock"></i>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Charts -->
-            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
-                <div class="glass-panel rounded-2xl p-6 lg:col-span-2 shadow-sm">
-                    <h3 class="text-lg font-bold text-slate-700 mb-5 flex items-center">
-                        <i class="fa-solid fa-chart-area text-violet-400 mr-2"></i> แนวโน้มผลการควบคุมคุณภาพ (L1 & L2)
-                    </h3>
-                    <div class="relative h-64 w-full">
-                        <canvas id="trendChart"></canvas>
-                    </div>
-                </div>
-                <div class="glass-panel rounded-2xl p-6 shadow-sm">
-                    <h3 class="text-lg font-bold text-slate-700 mb-5 flex items-center">
-                        <i class="fa-solid fa-pie-chart text-pink-400 mr-2"></i> สัดส่วนตามหน่วยงาน
-                    </h3>
-                    <div class="relative h-64 w-full flex justify-center">
-                        <canvas id="deptChart"></canvas>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Data Table -->
-            <div class="glass-panel rounded-3xl overflow-hidden shadow-sm">
-                <div class="p-6 border-b border-white/60 bg-white/40 flex flex-col sm:flex-row justify-between items-center gap-4">
-                    <h3 class="text-lg font-bold text-slate-700 flex items-center">
-                        <i class="fa-solid fa-list-alt text-indigo-400 mr-2"></i> ประวัติการบันทึกข้อมูล
-                    </h3>
-                    <div class="flex gap-3 w-full sm:w-auto">
-                        <div class="relative w-full sm:w-72">
-                            <i class="fa-solid fa-search absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400"></i>
-                            <input type="text" id="searchInput" placeholder="ค้นหาหน่วยงาน, เครื่อง..." class="glass-input pl-10 pr-4 py-2.5 w-full rounded-xl text-sm" onkeyup="renderTable()">
+                <!-- Charts -->
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                    <div class="bg-white p-5 rounded-2xl shadow-sm border border-purple-50 col-span-1">
+                        <h3 class="text-center text-purple-800 font-semibold mb-4 text-sm bg-purple-50 py-2 rounded-lg">สัดส่วนผลการทดสอบ</h3>
+                        <div class="relative h-56 w-full flex justify-center">
+                            <canvas id="chartStatus"></canvas>
                         </div>
-                        <button onclick="renderTable()" class="px-4 py-2.5 bg-white border border-slate-200 hover:bg-slate-50 rounded-xl text-slate-600 shadow-sm transition-all font-medium whitespace-nowrap">
-                            <i class="fa-solid fa-filter text-slate-400 mr-1"></i> ทั้งหมด
-                        </button>
+                    </div>
+                    <div class="bg-white p-5 rounded-2xl shadow-sm border border-purple-50 col-span-1 lg:col-span-2">
+                        <h3 class="text-center text-purple-800 font-semibold mb-4 text-sm bg-purple-50 py-2 rounded-lg">แนวโน้มค่า Level 1 & Level 2 (15 ครั้งล่าสุด)</h3>
+                        <div class="relative h-56 w-full">
+                            <canvas id="chartTrend"></canvas>
+                        </div>
                     </div>
                 </div>
-                <div class="overflow-x-auto">
-                    <table class="w-full text-sm text-left text-slate-600">
-                        <thead class="text-xs text-slate-500 uppercase bg-slate-50/50 border-b border-slate-100">
-                            <tr>
-                                <th scope="col" class="px-5 py-4 font-semibold">วันที่</th>
-                                <th scope="col" class="px-5 py-4 font-semibold">หน่วยงาน</th>
-                                <th scope="col" class="px-5 py-4 font-semibold">รหัสเครื่อง</th>
-                                <th scope="col" class="px-5 py-4 text-center font-semibold">L1</th>
-                                <th scope="col" class="px-5 py-4 text-center font-semibold">L2</th>
-                                <th scope="col" class="px-5 py-4 text-center font-semibold">สถานะ</th>
-                                <th scope="col" class="px-5 py-4 font-semibold">ผู้ทดสอบ</th>
-                                <th scope="col" class="px-5 py-4 text-right font-semibold">จัดการ</th>
-                            </tr>
-                        </thead>
-                        <tbody id="dataTableBody" class="divide-y divide-slate-100/50">
-                            <!-- Table rows will be inserted here by JS -->
-                        </tbody>
-                    </table>
-                </div>
-                <div class="p-8 text-center text-slate-400 text-sm hidden flex-col items-center justify-center" id="emptyState">
-                    <i class="fa-solid fa-folder-open text-4xl mb-3 text-slate-300"></i>
-                    ไม่พบข้อมูลที่ค้นหา
+                
+                <!-- Issue Table -->
+                <div class="bg-white rounded-2xl shadow-sm overflow-hidden border border-pink-100">
+                    <div class="bg-pink-50/50 px-5 py-4 border-b border-pink-100 flex items-center">
+                        <div class="bg-pink-100 p-2 rounded-lg mr-3 text-pink-500"><i class="fas fa-bell"></i></div>
+                        <h3 class="text-pink-700 font-semibold">รายการที่ต้องดำเนินการ (ไม่ผ่าน / แบตเตอรี่ต่ำ / Strip หมดอายุ)</h3>
+                    </div>
+                    <div class="overflow-x-auto">
+                        <table class="min-w-full text-sm text-left text-gray-500">
+                            <thead class="text-xs text-purple-700 uppercase bg-purple-50/50 border-b border-purple-100">
+                                <tr>
+                                    <th class="px-5 py-4">วันที่</th>
+                                    <th class="px-5 py-4">หน่วยงาน</th>
+                                    <th class="px-5 py-4">เครื่อง</th>
+                                    <th class="px-5 py-4">ปัญหาที่พบ</th>
+                                </tr>
+                            </thead>
+                            <tbody id="issue-table-body" class="divide-y divide-gray-100">
+                                <!-- Data inject via JS -->
+                            </tbody>
+                        </table>
+                    </div>
                 </div>
             </div>
-
         </div>
+
+        <!-- ======================= TAB 3: ADMIN/MANAGEMENT ======================= -->
+        <div id="tab-admin" class="tab-content">
+            <!-- Login State -->
+            <div id="admin-login-view" class="max-w-sm mx-auto bg-white rounded-3xl shadow-sm border border-purple-100 p-8 text-center mt-10">
+                <div class="w-20 h-20 bg-purple-50 rounded-full flex items-center justify-center mx-auto mb-6 text-purple-400">
+                    <i class="fas fa-user-shield text-3xl"></i>
+                </div>
+                <h2 class="text-xl font-bold text-purple-800 mb-2">เข้าสู่ระบบจัดการ</h2>
+                <p class="text-sm text-gray-400 mb-6">สำหรับผู้ดูแลระบบเท่านั้น</p>
+                
+                <input type="password" id="adminPassword" placeholder="รหัสผ่าน Admin (ลองใส่ 1234)" class="mb-5 text-center bg-gray-50 border-transparent focus:bg-white text-lg tracking-widest py-3">
+                
+                <button onclick="adminLogin()" class="w-full bg-purple-600 hover:bg-purple-700 text-white font-bold py-3 px-4 rounded-xl shadow-md shadow-purple-500/20 transition duration-200">
+                    เข้าสู่ระบบ
+                </button>
+            </div>
+
+            <!-- Admin Dashboard State -->
+            <div id="admin-data-view" style="display:none;" class="space-y-6">
+                <div class="flex flex-col md:flex-row justify-between items-center bg-white p-4 rounded-2xl shadow-sm border border-purple-50 gap-4">
+                    <h2 class="text-xl font-bold text-purple-800 flex items-center"><i class="fas fa-database mr-2 text-purple-400"></i> จัดการฐานข้อมูล</h2>
+                    <div class="flex w-full md:w-auto gap-3">
+                        <div class="relative w-full md:w-64">
+                            <i class="fas fa-search absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 text-sm"></i>
+                            <input type="text" id="searchInput" placeholder="ค้นหาข้อมูล..." class="w-full pl-9 text-sm bg-gray-50 border-gray-200" onkeyup="filterAdminTable()">
+                        </div>
+                        <button onclick="loadAdminData()" class="bg-purple-50 text-purple-600 px-3 py-2 rounded-xl hover:bg-purple-100 transition" title="รีเฟรช"><i class="fas fa-sync-alt"></i></button>
+                        <button onclick="adminLogout()" class="bg-pink-50 text-pink-600 px-3 py-2 rounded-xl hover:bg-pink-100 transition" title="ออกจากระบบ"><i class="fas fa-sign-out-alt"></i></button>
+                    </div>
+                </div>
+
+                <div id="admin-loader" class="loader" style="display:none;"></div>
+                
+                <div class="bg-white rounded-2xl shadow-sm overflow-hidden border border-purple-100">
+                    <div class="overflow-x-auto h-[600px] overflow-y-auto custom-scrollbar">
+                        <table class="min-w-full text-sm text-left text-gray-500 relative">
+                            <thead class="text-xs text-purple-700 uppercase bg-purple-50 sticky top-0 z-10 shadow-sm border-b border-purple-100">
+                                <tr>
+                                    <th class="px-5 py-4">วันที่</th>
+                                    <th class="px-5 py-4">หน่วยงาน</th>
+                                    <th class="px-5 py-4">เครื่องมือ</th>
+                                    <th class="px-5 py-4 text-center">L1 <span class="text-[10px] font-normal block text-purple-400">30-60</span></th>
+                                    <th class="px-5 py-4 text-center">L2 <span class="text-[10px] font-normal block text-purple-400">252-342</span></th>
+                                    <th class="px-5 py-4 text-center">สถานะ</th>
+                                    <th class="px-5 py-4 text-center">จัดการ</th>
+                                </tr>
+                            </thead>
+                            <tbody id="admin-table-body" class="divide-y divide-gray-100">
+                                <!-- Data inject via JS -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
     </main>
+</div>
 
-    <!-- Global Loader -->
-    <div id="global-loader" class="fixed inset-0 bg-white/80 backdrop-blur-sm z-50 flex-col items-center justify-center" style="display: none;">
-        <div class="loader ease-linear rounded-full border-4 border-t-4 border-slate-200 h-16 w-16 mb-4"></div>
-        <h2 class="text-center text-violet-600 text-xl font-semibold">กำลังประมวลผล...</h2>
-    </div>
+<script>
+    /* ==========================================
+       ตั้งค่า URL Web App จาก Google Apps Script
+       ========================================== */
+    const GAS_API_URL = 'https://script.google.com/macros/s/AKfycbwD3HllVCCKCIGOUXiuw9Z1jIv-a0OOs8t-UzQ3c7jk7aVGoErNU1pYjYu_qFO0DhQr/exec';
+    
+    // สถานะ
+    let globalData = [];
+    let isAdminLoggedIn = false;
+    let currentAdminPass = '';
+    let charts = {};
 
-    <!-- Login Modal -->
-    <div id="login-modal" class="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-50 hidden">
-        <div class="flex items-center justify-center min-h-screen p-4">
-            <div class="bg-white/90 backdrop-blur-lg border border-white p-8 rounded-3xl shadow-2xl w-full max-w-md transform transition-all">
-                <div class="text-center mb-8">
-                    <div class="w-16 h-16 bg-violet-100 text-violet-600 rounded-2xl flex items-center justify-center text-3xl mx-auto mb-4 shadow-inner">
-                        <i class="fa-solid fa-lock"></i>
-                    </div>
-                    <h3 class="text-2xl font-bold text-slate-800">ผู้ดูแลระบบ</h3>
-                    <p class="text-slate-500 mt-1">เข้าสู่ระบบเพื่อจัดการข้อมูล Dashboard</p>
-                </div>
-                <form id="loginForm" class="space-y-5">
-                    <div>
-                        <label class="block text-sm font-medium text-slate-700 mb-1.5">ชื่อผู้ใช้งาน</label>
-                        <div class="relative">
-                            <i class="fa-solid fa-user absolute left-4 top-1/2 -translate-y-1/2 text-slate-400"></i>
-                            <input type="text" id="username" required class="glass-input w-full pl-11 pr-4 py-3 rounded-xl text-sm" placeholder="admin">
-                        </div>
-                    </div>
-                    <div>
-                        <label class="block text-sm font-medium text-slate-700 mb-1.5">รหัสผ่าน</label>
-                        <div class="relative">
-                            <i class="fa-solid fa-key absolute left-4 top-1/2 -translate-y-1/2 text-slate-400"></i>
-                            <input type="password" id="password" required class="glass-input w-full pl-11 pr-4 py-3 rounded-xl text-sm" placeholder="••••••••">
-                        </div>
-                    </div>
-                    <div class="flex gap-3 pt-4">
-                        <button type="button" onclick="switchTab('record')" class="flex-1 px-4 py-3 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl font-medium transition-colors">ยกเลิก</button>
-                        <button type="submit" class="flex-1 px-4 py-3 bg-gradient-to-r from-violet-600 to-pink-500 hover:from-violet-700 hover:to-pink-600 text-white rounded-xl font-medium shadow-lg shadow-violet-200 transition-transform active:scale-95">เข้าสู่ระบบ</button>
-                    </div>
-                </form>
-            </div>
-        </div>
-    </div>
-
-    <script>
-        // ==========================================
-        // CONFIGURATION: URL ของ Google Apps Script Web App
-        // ==========================================
-        const GAS_URL = "https://script.google.com/macros/s/AKfycbwIUwe9MKx_VTq6ITOGxSSjzZTqTc46MQ008uha2sDMTUyxZx4I3gD65c2COJ8_CAv0/exec"; 
-
-        // State Variables
-        let isLoggedIn = false;
-        let allRecords = [];
-        let currentFilter = '';
+    // ตั้งค่าเริ่มต้น
+    document.addEventListener('DOMContentLoaded', () => {
+        // Set Today date in form
+        const today = new Date().toISOString().split('T')[0];
+        document.getElementById('TestDate').value = today;
         
-        // QC Config (จะถูกดึงจาก Backend หากมี หรือใช้ค่าเริ่มต้นนี้)
-        let qcConfig = {
-            l1: { min: 30, max: 60 },
-            l2: { min: 250, max: 350 }
-        };
+        // Date formatting for header
+        const options = { year: 'numeric', month: 'long', day: 'numeric' };
+        document.getElementById('current-date-badge').innerText = new Date().toLocaleDateString('th-TH', options);
+    });
 
-        // Charts instances
-        let trendChartInstance = null;
-        let deptChartInstance = null;
-
-        // Initialize
-        document.addEventListener("DOMContentLoaded", () => {
-            // Set default date to today
-            document.getElementById('testDate').valueAsDate = new Date();
-            
-            // Set hints
-            document.getElementById('qcRangeHint').innerText = 
-                `* เกณฑ์มาตรฐานอ้างอิง: L1 (${qcConfig.l1.min}-${qcConfig.l1.max}), L2 (${qcConfig.l2.min}-${qcConfig.l2.max})`;
-
-            // Form Submit Listeners
-            document.getElementById('iqcForm').addEventListener('submit', handleFormSubmit);
-            document.getElementById('loginForm').addEventListener('submit', handleLogin);
+    // เปลี่ยน Tab แบบ Smooth
+    function switchTab(tabId) {
+        document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+        document.getElementById('tab-' + tabId).classList.add('active');
+        
+        // Update styling navbar
+        const buttons = ['form', 'dashboard', 'admin'];
+        buttons.forEach(btn => {
+            const el = document.getElementById('btn-tab-' + btn);
+            if(btn === tabId) {
+                el.classList.add('bg-white/20', 'backdrop-blur-md', 'shadow-sm');
+                el.classList.remove('hover:bg-white/20');
+            } else {
+                el.classList.remove('bg-white/20', 'backdrop-blur-md', 'shadow-sm');
+                el.classList.add('hover:bg-white/20');
+            }
         });
 
-        // ==========================================
-        // UI & NAVIGATION LOGIC
-        // ==========================================
-        function switchTab(tab) {
-            const viewRecord = document.getElementById('view-record');
-            const viewDashboard = document.getElementById('view-dashboard');
-            const tabRecord = document.getElementById('tab-record');
-            const tabDashboard = document.getElementById('tab-dashboard');
-            const loginModal = document.getElementById('login-modal');
+        if (tabId === 'dashboard') loadDashboardData();
+        if (tabId === 'admin' && isAdminLoggedIn) loadAdminData();
+    }
 
-            if (tab === 'dashboard' && !isLoggedIn) {
-                loginModal.classList.remove('hidden');
-                return;
-            }
-
-            loginModal.classList.add('hidden');
-
-            if (tab === 'record') {
-                viewRecord.classList.remove('hidden');
-                viewDashboard.classList.add('hidden');
-                tabRecord.className = "tab-active px-2 sm:px-3 py-4 text-sm sm:text-base transition-colors duration-200";
-                tabDashboard.className = "tab-inactive px-2 sm:px-3 py-4 text-sm sm:text-base transition-colors duration-200";
-            } else {
-                viewRecord.classList.add('hidden');
-                viewDashboard.classList.remove('hidden');
-                tabDashboard.className = "tab-active px-2 sm:px-3 py-4 text-sm sm:text-base transition-colors duration-200";
-                tabRecord.className = "tab-inactive px-2 sm:px-3 py-4 text-sm sm:text-base transition-colors duration-200";
-                loadDashboardData();
-            }
+    // จัดการ Select "อื่นๆ"
+    function checkOtherSelect(selectEl, containerId, inputId) {
+        const container = document.getElementById(containerId);
+        const input = document.getElementById(inputId);
+        if (selectEl.value === 'Other') {
+            container.classList.remove('hidden');
+            input.required = true;
+            input.focus();
+        } else {
+            container.classList.add('hidden');
+            input.required = false;
         }
+    }
 
-        function showLoader(show) {
-            document.getElementById('global-loader').style.display = show ? 'flex' : 'none';
-        }
-
-        // ==========================================
-        // VALIDATION & QC LOGIC
-        // ==========================================
-        function checkExpiry(inputElement) {
-            const today = new Date();
-            today.setHours(0,0,0,0);
-            const expDate = new Date(inputElement.value);
-            
-            if (expDate < today) {
-                Swal.fire({
-                    icon: 'error',
-                    title: 'คำเตือน: วัสดุหมดอายุแล้ว!',
-                    text: 'กรุณาตรวจสอบ Lot ที่นำมาใช้งาน',
-                    confirmButtonColor: '#0ea5e9'
-                });
-                inputElement.classList.add('border-red-500', 'bg-red-50');
-            } else {
-                const diffTime = Math.abs(expDate - today);
-                const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)); 
-                if (diffDays <= 30) {
-                    Swal.fire({
-                        icon: 'warning',
-                        title: 'วัสดุใกล้หมดอายุ',
-                        text: `เหลือเวลาอีก ${diffDays} วัน`,
-                        toast: true, position: 'top-end', timer: 3000, showConfirmButton: false
-                    });
-                    inputElement.classList.add('border-orange-400');
-                } else {
-                    inputElement.classList.remove('border-red-500', 'bg-red-50', 'border-orange-400');
-                }
-            }
-        }
-
-        function evaluateQC() {
-            const l1 = parseFloat(document.getElementById('l1Result').value);
-            const l2 = parseFloat(document.getElementById('l2Result').value);
-            
-            const badge1 = document.getElementById('l1Badge');
-            const badge2 = document.getElementById('l2Badge');
-
-            if (!isNaN(l1)) {
-                badge1.classList.remove('hidden');
-                if (l1 >= qcConfig.l1.min && l1 <= qcConfig.l1.max) {
-                    badge1.className = "mt-2 text-center text-xs font-bold py-1.5 rounded-lg shadow-sm bg-emerald-100 text-emerald-700";
-                    badge1.innerText = "ผ่าน (Pass)";
-                } else {
-                    badge1.className = "mt-2 text-center text-xs font-bold py-1.5 rounded-lg shadow-sm bg-rose-100 text-rose-700";
-                    badge1.innerText = "ไม่ผ่าน (Fail)";
-                }
-            } else { badge1.classList.add('hidden'); }
-
-            if (!isNaN(l2)) {
-                badge2.classList.remove('hidden');
-                if (l2 >= qcConfig.l2.min && l2 <= qcConfig.l2.max) {
-                    badge2.className = "mt-2 text-center text-xs font-bold py-1.5 rounded-lg shadow-sm bg-emerald-100 text-emerald-700";
-                    badge2.innerText = "ผ่าน (Pass)";
-                } else {
-                    badge2.className = "mt-2 text-center text-xs font-bold py-1.5 rounded-lg shadow-sm bg-rose-100 text-rose-700";
-                    badge2.innerText = "ไม่ผ่าน (Fail)";
-                }
-            } else { badge2.classList.add('hidden'); }
-        }
-
-        function getStatusFromValue(val, level) {
-            if(isNaN(val)) return "";
-            if (level === 1) return (val >= qcConfig.l1.min && val <= qcConfig.l1.max) ? "Pass" : "Fail";
-            if (level === 2) return (val >= qcConfig.l2.min && val <= qcConfig.l2.max) ? "Pass" : "Fail";
-            return "";
-        }
-
-        // ==========================================
-        // API COMMUNICATION (CRUD)
-        // ==========================================
-        async function gasRequest(payload) {
-            if (GAS_URL === "YOUR_GOOGLE_WEB_APP_URL_HERE") {
-                Swal.fire('ข้อผิดพลาด', 'ยังไม่ได้ระบุ GAS Web App URL ใน Source Code', 'error');
-                throw new Error("Missing GAS URL");
-            }
-            try {
-                const response = await fetch(GAS_URL, {
-                    method: 'POST',
-                    redirect: 'follow', // จำเป็นสำหรับ GAS
-                    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-                    body: JSON.stringify(payload)
-                });
-                return await response.json();
-            } catch (error) {
-                console.error("API Error:", error);
-                throw error;
-            }
-        }
-
-        async function setupGAS() {
-            showLoader(true);
-            try {
-                const res = await gasRequest({ action: 'setup' });
-                Swal.fire('สำเร็จ', res.message, 'success');
-            } catch (e) {
-                Swal.fire('ข้อผิดพลาด', 'ไม่สามารถเชื่อมต่อระบบได้', 'error');
-            }
-            showLoader(false);
-        }
-
-        async function handleFormSubmit(e) {
-            e.preventDefault();
-            
-            // Validate Missing Data (HTML5 required attributes handle most of this, but double check)
-            const requiredIds = ['testDate', 'department', 'machineId', 'controlLot', 'controlExp', 'stripLot', 'stripExp', 'l1Result', 'l2Result', 'tester'];
-            for(let id of requiredIds) {
-                if(!document.getElementById(id).value.trim()) {
-                    Swal.fire('ข้อมูลไม่ครบถ้วน', 'กรุณากรอกข้อมูลที่มีเครื่องหมาย * ให้ครบถ้วน', 'warning');
-                    return;
-                }
-            }
-
-            const l1 = parseFloat(document.getElementById('l1Result').value);
-            const l2 = parseFloat(document.getElementById('l2Result').value);
-            
-            const formData = {
-                testDate: document.getElementById('testDate').value,
-                department: document.getElementById('department').value,
-                machineId: document.getElementById('machineId').value.toUpperCase(),
-                controlLot: document.getElementById('controlLot').value.toUpperCase(),
-                controlExp: document.getElementById('controlExp').value,
-                stripLot: document.getElementById('stripLot').value.toUpperCase(),
-                stripExp: document.getElementById('stripExp').value,
-                l1Result: l1,
-                l2Result: l2,
-                l1Status: getStatusFromValue(l1, 1),
-                l2Status: getStatusFromValue(l2, 2),
-                tester: document.getElementById('tester').value
-            };
-
-            const recordId = document.getElementById('recordId').value;
-            const action = recordId ? 'update' : 'add';
-            if (recordId) formData.id = recordId;
-
-            showLoader(true);
-            try {
-                const res = await gasRequest({ action: action, data: formData });
-                if (res.status === 'success') {
-                    Swal.fire({
-                        icon: 'success', title: 'บันทึกสำเร็จ',
-                        text: res.message, timer: 2000, showConfirmButton: false
-                    });
-                    clearForm();
-                    if(isLoggedIn && !document.getElementById('view-dashboard').classList.contains('hidden')){
-                        loadDashboardData();
-                    }
-                } else {
-                    Swal.fire('ข้อผิดพลาด', res.message, 'error');
-                }
-            } catch (error) {
-                Swal.fire('ข้อผิดพลาด', 'เชื่อมต่อฐานข้อมูลล้มเหลว', 'error');
-            }
-            showLoader(false);
-        }
-
-        function clearForm() {
-            document.getElementById('iqcForm').reset();
-            document.getElementById('recordId').value = "";
-            document.getElementById('testDate').valueAsDate = new Date();
-            document.getElementById('l1Badge').classList.add('hidden');
-            document.getElementById('l2Badge').classList.add('hidden');
-            
-            const inputs = document.querySelectorAll('input[type="date"]');
-            inputs.forEach(el => el.classList.remove('border-red-500', 'bg-red-50', 'border-orange-400'));
-        }
-
-        async function handleLogin(e) {
-            e.preventDefault();
-            const u = document.getElementById('username').value;
-            const p = document.getElementById('password').value;
-            
-            showLoader(true);
-            try {
-                const res = await gasRequest({ action: 'login', username: u, password: p });
-                if (res.status === 'success') {
-                    isLoggedIn = true;
-                    document.getElementById('btn-logout').classList.remove('hidden');
-                    switchTab('dashboard');
-                    Swal.fire({ toast:true, icon:'success', title:'เข้าสู่ระบบสำเร็จ', position:'top-end', timer:2000, showConfirmButton:false });
-                    document.getElementById('loginForm').reset();
-                } else {
-                    Swal.fire('ล้มเหลว', res.message, 'error');
-                }
-            } catch(e) {
-                Swal.fire('ข้อผิดพลาด', 'ไม่สามารถเชื่อมต่อระบบได้', 'error');
-            }
-            showLoader(false);
-        }
-
-        function logout() {
-            isLoggedIn = false;
-            document.getElementById('btn-logout').classList.add('hidden');
-            switchTab('record');
-        }
-
-        // ==========================================
-        // DASHBOARD & ANALYTICS
-        // ==========================================
-        async function loadDashboardData() {
-            if(!isLoggedIn) return;
-            showLoader(true);
-            try {
-                // Fetch config (optional) and data
-                const configRes = await gasRequest({ action: 'getConfig' });
-                if(configRes.l1) qcConfig = configRes;
-
-                const res = await gasRequest({ action: 'get' });
-                if (res.status === 'success') {
-                    allRecords = res.data;
-                    // Sort descending by TestDate string normally or timestamp
-                    allRecords.sort((a, b) => new Date(b.Timestamp || b.TestDate) - new Date(a.Timestamp || a.TestDate));
-                    updateDashboardCards();
-                    renderTable();
-                    renderCharts();
-                } else {
-                    Swal.fire('คำเตือน', res.message, 'warning');
-                }
-            } catch (error) {
-                console.error(error);
-                Swal.fire('ข้อผิดพลาด', 'ไม่สามารถโหลดข้อมูลแดชบอร์ดได้', 'error');
-            }
-            showLoader(false);
-        }
-
-        function updateDashboardCards() {
-            const total = allRecords.length;
-            let passCount = 0;
-            let failCount = 0;
-            let expiringCount = 0;
-            
-            const today = new Date();
-            today.setHours(0,0,0,0);
-            const thirtyDaysFromNow = new Date(today);
-            thirtyDaysFromNow.setDate(thirtyDaysFromNow.getDate() + 30);
-
-            allRecords.forEach(r => {
-                // Pass/Fail
-                if(r.L1_Status === 'Pass' && r.L2_Status === 'Pass') passCount++;
-                else failCount++;
-
-                // Expiry
-                const cExp = new Date(r.ControlExp);
-                const sExp = new Date(r.StripExp);
-                if (cExp <= thirtyDaysFromNow || sExp <= thirtyDaysFromNow) expiringCount++;
-            });
-
-            const passRate = total > 0 ? Math.round((passCount / total) * 100) : 0;
-
-            document.getElementById('kpi-total').innerText = total;
-            document.getElementById('kpi-pass-rate').innerText = passRate + '%';
-            document.getElementById('kpi-fail').innerText = failCount;
-            document.getElementById('kpi-expiring').innerText = expiringCount;
-        }
-
-        function filterTableByStatus(status) {
-            currentFilter = status; // e.g. "Fail"
-            document.getElementById('searchInput').value = '';
-            renderTable();
-        }
-        function filterTableByExpiry() {
-            currentFilter = 'Expiring';
-            document.getElementById('searchInput').value = '';
-            renderTable();
-        }
-
-        function renderTable() {
-            const tbody = document.getElementById('dataTableBody');
-            const emptyState = document.getElementById('emptyState');
-            const search = document.getElementById('searchInput').value.toLowerCase();
-            
-            tbody.innerHTML = '';
-            let filtered = allRecords;
-
-            // Apply specific filters
-            if (currentFilter === 'Fail') {
-                filtered = filtered.filter(r => r.L1_Status !== 'Pass' || r.L2_Status !== 'Pass');
-            } else if (currentFilter === 'Expiring') {
-                const today = new Date();
-                const limit = new Date(); limit.setDate(limit.getDate() + 30);
-                filtered = filtered.filter(r => new Date(r.ControlExp) <= limit || new Date(r.StripExp) <= limit);
-            }
-
-            // Apply search filter
-            if (search) {
-                filtered = filtered.filter(r => 
-                    (r.Department && r.Department.toLowerCase().includes(search)) ||
-                    (r.MachineID && r.MachineID.toLowerCase().includes(search)) ||
-                    (r.Tester && r.Tester.toLowerCase().includes(search))
-                );
-            }
-
-            if (filtered.length === 0) {
-                emptyState.classList.remove('hidden');
-                emptyState.classList.add('flex');
-                return;
-            } else {
-                emptyState.classList.add('hidden');
-                emptyState.classList.remove('flex');
-            }
-
-            filtered.forEach(r => {
-                const tr = document.createElement('tr');
-                tr.className = "bg-white/30 border-b border-slate-100/50 hover:bg-white/80 transition-all duration-200";
-                
-                const formatStatus = (status) => {
-                    if(status === 'Pass') return `<span class="bg-emerald-100 text-emerald-700 text-xs font-bold px-2.5 py-1 rounded-md">ผ่าน</span>`;
-                    return `<span class="bg-rose-100 text-rose-700 text-xs font-bold px-2.5 py-1 rounded-md">ไม่ผ่าน</span>`;
-                };
-
-                const overallStatus = (r.L1_Status === 'Pass' && r.L2_Status === 'Pass') 
-                    ? `<i class="fa-solid fa-circle-check text-emerald-500 text-xl drop-shadow-sm"></i>` 
-                    : `<i class="fa-solid fa-circle-xmark text-rose-500 text-xl drop-shadow-sm"></i>`;
-
-                // Date formatter
-                const d = new Date(r.TestDate);
-                const dateStr = !isNaN(d) ? d.toLocaleDateString('th-TH', { year: '2-digit', month: 'short', day: 'numeric' }) : r.TestDate;
-
-                tr.innerHTML = `
-                    <td class="px-5 py-4">${dateStr}</td>
-                    <td class="px-5 py-4 font-medium text-slate-800 cursor-pointer hover:text-violet-600 underline decoration-dashed" onclick="drillDown('${r.Department}')">${r.Department}</td>
-                    <td class="px-5 py-4 cursor-pointer hover:text-violet-600 underline decoration-dashed" onclick="drillDown('${r.MachineID}')">${r.MachineID}</td>
-                    <td class="px-5 py-4 text-center font-medium">${r.L1_Result}</td>
-                    <td class="px-5 py-4 text-center font-medium">${r.L2_Result}</td>
-                    <td class="px-5 py-4 text-center">${overallStatus}</td>
-                    <td class="px-5 py-4 text-slate-500">${r.Tester}</td>
-                    <td class="px-5 py-4 text-right">
-                        <button onclick="editRecord('${r.ID}')" class="text-indigo-400 hover:text-indigo-600 mr-3 transition-colors" title="แก้ไข"><i class="fa-solid fa-pen-to-square text-lg"></i></button>
-                        <button onclick="deleteRecord('${r.ID}')" class="text-rose-400 hover:text-rose-600 transition-colors" title="ลบ"><i class="fa-solid fa-trash text-lg"></i></button>
-                    </td>
-                `;
-                tbody.appendChild(tr);
-            });
-
-            // Reset specific filter after rendering so next search applies to all
-            currentFilter = ''; 
-        }
-
-        function drillDown(term) {
-            document.getElementById('searchInput').value = term;
-            renderTable();
-            // Scroll to table
-            document.getElementById('searchInput').scrollIntoView({ behavior: 'smooth', block: 'center' });
-        }
-
-        function editRecord(id) {
-            const r = allRecords.find(x => x.ID === id);
-            if(!r) return;
-            
-            // Format dates for input type="date"
-            const formatDate = (dateString) => {
-                if(!dateString) return '';
-                const d = new Date(dateString);
-                if(isNaN(d)) return dateString;
-                return d.toISOString().split('T')[0];
-            };
-
-            document.getElementById('recordId').value = r.ID;
-            document.getElementById('testDate').value = formatDate(r.TestDate);
-            document.getElementById('department').value = r.Department;
-            document.getElementById('machineId').value = r.MachineID;
-            document.getElementById('controlLot').value = r.ControlLot;
-            document.getElementById('controlExp').value = formatDate(r.ControlExp);
-            document.getElementById('stripLot').value = r.StripLot;
-            document.getElementById('stripExp').value = formatDate(r.StripExp);
-            document.getElementById('l1Result').value = r.L1_Result;
-            document.getElementById('l2Result').value = r.L2_Result;
-            document.getElementById('tester').value = r.Tester;
-            
-            evaluateQC();
-            switchTab('record');
-            
+    // แจ้งเตือนวันหมดอายุ
+    function checkExpiry(dateStr) {
+        if(!dateStr) return;
+        const expiryDate = new Date(dateStr);
+        const today = new Date();
+        today.setHours(0,0,0,0);
+        
+        const warning = document.getElementById('expiry-warning');
+        if (expiryDate < today) {
+            warning.classList.remove('hidden');
             Swal.fire({
-                toast: true, position: 'top-end', icon: 'info',
-                title: 'เข้าสู่โหมดแก้ไขข้อมูล', showConfirmButton: false, timer: 3000
+                icon: 'warning',
+                title: 'คำเตือน!',
+                text: 'Strip Lot นี้หมดอายุแล้ว โปรดตรวจสอบก่อนใช้งาน',
+                confirmButtonColor: '#c084fc',
+                background: '#fff0f2'
             });
+        } else {
+            warning.classList.add('hidden');
+        }
+    }
+
+    // ประเมินผลอัตโนมัติ (Validation)
+    function evaluateStatus() {
+        const l1 = parseFloat(document.getElementById('L1_Result').value);
+        const l2 = parseFloat(document.getElementById('L2_Result').value);
+        
+        const l1Eval = document.getElementById('L1-eval');
+        const l2Eval = document.getElementById('L2-eval');
+        const finalDisp = document.getElementById('FinalStatusDisplay');
+        const finalInput = document.getElementById('FinalStatus');
+
+        let isL1Pass = null;
+        let isL2Pass = null;
+
+        // Check L1 (30-60)
+        if (!isNaN(l1)) {
+            if (l1 >= 30 && l1 <= 60) {
+                l1Eval.innerHTML = '<span class="text-emerald-500 font-semibold bg-emerald-50 px-2 py-1 rounded text-xs"><i class="fas fa-check"></i> ผ่านเกณฑ์</span>';
+                isL1Pass = true;
+            } else {
+                l1Eval.innerHTML = '<span class="text-pink-500 font-semibold bg-pink-50 px-2 py-1 rounded text-xs"><i class="fas fa-times"></i> ไม่ผ่านเกณฑ์</span>';
+                isL1Pass = false;
+            }
+        } else { l1Eval.innerHTML = ''; }
+
+        // Check L2 (252-342)
+        if (!isNaN(l2)) {
+            if (l2 >= 252 && l2 <= 342) {
+                l2Eval.innerHTML = '<span class="text-emerald-500 font-semibold bg-emerald-50 px-2 py-1 rounded text-xs"><i class="fas fa-check"></i> ผ่านเกณฑ์</span>';
+                isL2Pass = true;
+            } else {
+                l2Eval.innerHTML = '<span class="text-pink-500 font-semibold bg-pink-50 px-2 py-1 rounded text-xs"><i class="fas fa-times"></i> ไม่ผ่านเกณฑ์</span>';
+                isL2Pass = false;
+            }
+        } else { l2Eval.innerHTML = ''; }
+
+        // Final
+        if (isL1Pass !== null && isL2Pass !== null) {
+            if (isL1Pass && isL2Pass) {
+                finalDisp.innerHTML = '<span class="text-emerald-500 drop-shadow-sm"><i class="fas fa-check-circle"></i> ผ่าน (Pass)</span>';
+                finalInput.value = 'ผ่าน';
+            } else {
+                finalDisp.innerHTML = '<span class="text-pink-500 drop-shadow-sm"><i class="fas fa-times-circle"></i> ไม่ผ่าน (Fail)</span>';
+                finalInput.value = 'ไม่ผ่าน';
+            }
+        } else {
+            finalDisp.innerHTML = '<span class="text-purple-200">รอข้อมูล...</span>';
+            finalInput.value = '';
+        }
+    }
+
+    // ส่งฟอร์ม
+    document.getElementById('iqcForm').addEventListener('submit', async function(e) {
+        e.preventDefault();
+        
+        let dept = document.getElementById('Department').value;
+        if(dept === 'Other') dept = document.getElementById('DeptOther').value;
+        
+        let pos = document.getElementById('Position').value;
+        if(pos === 'Other') pos = document.getElementById('PosOther').value;
+        
+        const finalStatus = document.getElementById('FinalStatus').value;
+        if(!finalStatus) {
+            Swal.fire({icon: 'warning', title: 'ข้อมูลไม่ครบ', text: 'กรุณากรอกผล L1 และ L2', confirmButtonColor: '#c084fc'});
+            return;
         }
 
-        async function deleteRecord(id) {
+        const payload = {
+            TestDate: formatISOtoDateString(document.getElementById('TestDate').value),
+            Department: dept,
+            TesterName: document.getElementById('TesterName').value,
+            Position: pos,
+            DeviceName: document.getElementById('DeviceName').value,
+            BatteryStatus: document.querySelector('input[name="BatteryStatus"]:checked').value,
+            StripLot: document.getElementById('StripLot').value,
+            StripExpiry: formatISOtoDateString(document.getElementById('StripExpiry').value),
+            L1_Result: parseFloat(document.getElementById('L1_Result').value),
+            L2_Result: parseFloat(document.getElementById('L2_Result').value),
+            FinalStatus: finalStatus
+        };
+
+        if(payload.FinalStatus === 'ไม่ผ่าน' || payload.BatteryStatus === 'แบตเตอรี่ต่ำ') {
             const confirm = await Swal.fire({
-                title: 'ยืนยันการลบ?',
-                text: "ข้อมูลนี้จะถูกลบออกจากฐานข้อมูลอย่างถาวร!",
+                title: 'คำเตือนผลการประเมิน',
+                text: "พบผล 'ไม่ผ่าน' หรือ 'แบตต่ำ' ยืนยันการบันทึกใช่หรือไม่?",
                 icon: 'warning',
                 showCancelButton: true,
-                confirmButtonColor: '#d33',
-                cancelButtonColor: '#3085d6',
-                confirmButtonText: 'ใช่, ลบเลย!',
+                confirmButtonColor: '#f472b6',
+                cancelButtonColor: '#9ca3af',
+                confirmButtonText: 'บันทึก',
                 cancelButtonText: 'ยกเลิก'
             });
+            if(!confirm.isConfirmed) return;
+        }
 
-            if(confirm.isConfirmed) {
-                showLoader(true);
-                try {
-                    const res = await gasRequest({ action: 'delete', id: id });
-                    if(res.status === 'success') {
-                        Swal.fire('ลบแล้ว!', 'ลบข้อมูลเรียบร้อยแล้ว', 'success');
-                        loadDashboardData();
-                    } else {
-                        Swal.fire('ข้อผิดพลาด', res.message, 'error');
-                    }
-                } catch(e) {
-                    Swal.fire('ข้อผิดพลาด', 'ลบข้อมูลไม่สำเร็จ', 'error');
+        const btn = document.getElementById('btnSubmit');
+        const origText = btn.innerHTML;
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i> กำลังบันทึก...';
+        btn.disabled = true;
+
+        try {
+            // ==========================================
+            // DEMO MODE: ทำงานเมื่อยังไม่ใส่ URL API จริง
+            // ==========================================
+            if(GAS_API_URL.includes('YOUR_SCRIPT_ID')) {
+                payload.RecordID = 'DEMO-NEW-' + Date.now();
+                if(globalData.length === 0) globalData = generateMockData();
+                globalData.unshift(payload); // แทรกไว้บนสุด
+                
+                setTimeout(() => { // จำลองเวลาโหลด
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'บันทึกสำเร็จ (Demo Mode)',
+                        text: 'ข้อมูลจำลองถูกบันทึกลงระบบชั่วคราวแล้ว (หากต้องการบันทึกจริงต้องนำ URL จาก Google Apps Script มาใส่ในโค้ด)',
+                        confirmButtonColor: '#c084fc'
+                    });
+                    document.getElementById('iqcForm').reset();
+                    document.getElementById('TestDate').value = new Date().toISOString().split('T')[0];
+                    evaluateStatus();
+                    btn.innerHTML = origText;
+                    btn.disabled = false;
+                }, 800);
+                return;
+            }
+            // ==========================================
+
+            // ระบบจริง
+            const response = await fetch(GAS_API_URL, {
+                method: 'POST',
+                body: JSON.stringify({ action: 'saveData', payload: payload })
+            });
+            const result = await response.json();
+            
+            if (result.status === 'success') {
+                Swal.fire({icon: 'success', title: 'สำเร็จ!', text: 'บันทึกข้อมูลเรียบร้อย', confirmButtonColor: '#c084fc'});
+                document.getElementById('iqcForm').reset();
+                document.getElementById('TestDate').value = new Date().toISOString().split('T')[0];
+                evaluateStatus();
+            } else {
+                throw new Error(result.message);
+            }
+        } catch (error) {
+            Swal.fire({icon: 'error', title: 'เกิดข้อผิดพลาด', text: error.message, confirmButtonColor: '#f472b6'});
+        } finally {
+            btn.innerHTML = origText;
+            btn.disabled = false;
+        }
+    });
+
+    // แปลงวันที่ ISO -> DD/MM/YYYY
+    function formatISOtoDateString(isoStr) {
+        if(!isoStr) return "";
+        const parts = isoStr.split('-');
+        return `${parts[2]}/${parts[1]}/${parts[0]}`;
+    }
+
+    // ฟังก์ชันสร้างข้อมูลจำลอง (Mock Data) สวยๆ สำหรับ Demo
+    function generateMockData() {
+        const mock = [];
+        const depts = ['อุบัติเหตุฉุกเฉิน', 'ผู้ป่วยนอก', 'ผู้ป่วยในชาย', 'ผู้ป่วยในหญิง', 'ห้องปฏิบัติการ', 'ANC'];
+        const devices = ['ACCU-01', 'ACCU-02', 'ACCU-03', 'ACCU-04'];
+        const today = new Date();
+        
+        for(let i=0; i<30; i++) {
+            let d = new Date(today);
+            d.setDate(d.getDate() - (i*2)); // ย้อนหลังวันละนิดหน่อย
+            let dateStr = `${String(d.getDate()).padStart(2, '0')}/${String(d.getMonth()+1).padStart(2, '0')}/${d.getFullYear()}`;
+            
+            let isBad = Math.random() > 0.85; // 15% chance of failing
+            let l1 = isBad ? (Math.random() * (29 - 25) + 25).toFixed(1) : (Math.random() * (55 - 35) + 35).toFixed(1);
+            let l2 = isBad ? (Math.random() * (355 - 345) + 345).toFixed(1) : (Math.random() * (330 - 260) + 260).toFixed(1);
+            
+            let isL1Pass = l1 >= 30 && l1 <= 60;
+            let isL2Pass = l2 >= 252 && l2 <= 342;
+            let finalStat = (isL1Pass && isL2Pass) ? 'ผ่าน' : 'ไม่ผ่าน';
+            
+            mock.push({
+                RecordID: 'DEMO-' + i,
+                TestDate: dateStr,
+                Department: depts[Math.floor(Math.random()*depts.length)],
+                TesterName: 'พยาบาล ' + (Math.floor(Math.random()*5)+1),
+                Position: 'พยาบาลวิชาชีพ',
+                DeviceName: devices[Math.floor(Math.random()*devices.length)],
+                BatteryStatus: Math.random() > 0.95 ? 'แบตเตอรี่ต่ำ' : 'แบตเตอรี่ปกติ',
+                StripLot: 'LOT-' + (8900 - i),
+                StripExpiry: '31/12/2026',
+                L1_Result: parseFloat(l1),
+                L2_Result: parseFloat(l2),
+                FinalStatus: finalStat
+            });
+        }
+        return mock;
+    }
+
+    // Fetch ข้อมูล
+    async function fetchAllData() {
+        if(GAS_API_URL.includes('YOUR_SCRIPT_ID')) {
+            // ใช้ Demo Mode
+            if(globalData.length === 0) globalData = generateMockData();
+            return globalData;
+        }
+        
+        try {
+            const response = await fetch(GAS_API_URL, {
+                method: 'POST',
+                body: JSON.stringify({ action: 'getData' })
+            });
+            const result = await response.json();
+            if(result.status === 'success') {
+                globalData = result.data;
+                return result.data;
+            }
+            return [];
+        } catch(e) {
+            console.error(e);
+            return [];
+        }
+    }
+
+    // โหลด Dashboard
+    async function loadDashboardData() {
+        document.getElementById('dashboard-content').style.display = 'none';
+        document.getElementById('dashboard-loader').style.display = 'block';
+
+        const data = await fetchAllData();
+        
+        let passCount = 0, failCount = 0, issueCount = 0;
+        const issues = [];
+        const l1Data = [], l2Data = [], labels = [];
+
+        data.forEach((row, index) => {
+            if(row.FinalStatus === 'ผ่าน') passCount++;
+            if(row.FinalStatus === 'ไม่ผ่าน') failCount++;
+            if(row.BatteryStatus === 'แบตเตอรี่ต่ำ') issueCount++;
+
+            let rowIssues = [];
+            if(row.FinalStatus === 'ไม่ผ่าน') rowIssues.push('IQC ไม่ผ่าน');
+            if(row.BatteryStatus === 'แบตเตอรี่ต่ำ') rowIssues.push('แบตเตอรี่ต่ำ');
+            
+            // เช็คหมดอายุ
+            if(row.StripExpiry) {
+                const parts = row.StripExpiry.split('/');
+                if(parts.length===3) {
+                    const expDate = new Date(`${parts[2]}-${parts[1]}-${parts[0]}`);
+                    const testDateParts = row.TestDate.split('/');
+                    const tDate = new Date(`${testDateParts[2]}-${testDateParts[1]}-${testDateParts[0]}`);
+                    if(expDate < tDate) rowIssues.push('Strip หมดอายุ');
                 }
-                showLoader(false);
+            }
+
+            if(rowIssues.length > 0) {
+                issues.push({ date: row.TestDate, dept: row.Department, device: row.DeviceName, issue: rowIssues.join(', ') });
+            }
+
+            // Data สำหรับกราฟ 15 ล่าสุด (อ่านย้อนกลับ)
+            if(index < 15) {
+                labels.unshift(row.TestDate.substring(0,5)); 
+                l1Data.unshift(row.L1_Result);
+                l2Data.unshift(row.L2_Result);
+            }
+        });
+
+        const total = data.length;
+        document.getElementById('kpi-total').innerText = total;
+        document.getElementById('kpi-pass-val').innerText = passCount;
+        document.getElementById('kpi-pass-pct').innerText = total > 0 ? `(${(passCount/total*100).toFixed(1)}%)` : '(0%)';
+        document.getElementById('kpi-fail-val').innerText = failCount;
+        document.getElementById('kpi-fail-pct').innerText = total > 0 ? `(${(failCount/total*100).toFixed(1)}%)` : '(0%)';
+        document.getElementById('kpi-issue').innerText = issueCount;
+
+        // Table
+        const tbody = document.getElementById('issue-table-body');
+        tbody.innerHTML = '';
+        if(issues.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="4" class="px-5 py-6 text-center text-gray-400 bg-white"><i class="fas fa-check-circle text-2xl text-emerald-300 block mb-2"></i> ไม่พบรายการผิดปกติ</td></tr>';
+        } else {
+            issues.slice(0, 10).forEach(i => {
+                tbody.innerHTML += `
+                    <tr class="bg-white hover:bg-pink-50/30 transition">
+                        <td class="px-5 py-3 whitespace-nowrap">${i.date}</td>
+                        <td class="px-5 py-3">${i.dept}</td>
+                        <td class="px-5 py-3 font-medium">${i.device}</td>
+                        <td class="px-5 py-3 text-pink-500 font-semibold text-xs"><span class="bg-pink-50 px-2 py-1 rounded">${i.issue}</span></td>
+                    </tr>`;
+            });
+        }
+
+        renderCharts(passCount, failCount, labels, l1Data, l2Data);
+
+        // Add small delay for smoothness
+        setTimeout(() => {
+            document.getElementById('dashboard-loader').style.display = 'none';
+            document.getElementById('dashboard-content').style.display = 'block';
+        }, 300);
+    }
+
+    function renderCharts(pass, fail, labels, l1, l2) {
+        if(charts.pie) charts.pie.destroy();
+        if(charts.line) charts.line.destroy();
+
+        // Chart.js Default styling
+        Chart.defaults.font.family = "'Sarabun', sans-serif";
+        Chart.defaults.color = '#6b7280';
+
+        const ctxStatus = document.getElementById('chartStatus').getContext('2d');
+        charts.pie = new Chart(ctxStatus, {
+            type: 'doughnut',
+            data: {
+                labels: ['ผ่าน (Pass)', 'ไม่ผ่าน (Fail)'],
+                datasets: [{
+                    data: [pass, fail],
+                    backgroundColor: ['#34d399', '#f472b6'], // emerald-400, pink-400
+                    borderWidth: 3,
+                    borderColor: '#ffffff',
+                    hoverOffset: 4
+                }]
+            },
+            options: { 
+                responsive: true, maintainAspectRatio: false, 
+                plugins: { legend: { position: 'bottom', labels: { usePointStyle: true, padding: 20 } } },
+                cutout: '70%'
+            }
+        });
+
+        const ctxTrend = document.getElementById('chartTrend').getContext('2d');
+        charts.line = new Chart(ctxTrend, {
+            type: 'line',
+            data: {
+                labels: labels,
+                datasets: [
+                    { 
+                        label: 'L1 (30-60)', data: l1, 
+                        borderColor: '#c084fc', // purple-400
+                        backgroundColor: '#c084fc',
+                        tension: 0.4, yAxisID: 'y', borderWidth: 2,
+                        pointBackgroundColor: '#fff', pointBorderWidth: 2, pointRadius: 4
+                    },
+                    { 
+                        label: 'L2 (252-342)', data: l2, 
+                        borderColor: '#fb923c', // orange-400
+                        backgroundColor: '#fb923c',
+                        tension: 0.4, yAxisID: 'y1', borderWidth: 2, borderDash: [5, 5],
+                        pointBackgroundColor: '#fff', pointBorderWidth: 2, pointRadius: 4
+                    }
+                ]
+            },
+            options: {
+                responsive: true, maintainAspectRatio: false,
+                interaction: { mode: 'index', intersect: false },
+                plugins: { legend: { position: 'top', labels: { usePointStyle: true } } },
+                scales: {
+                    x: { grid: { display: false } },
+                    y: { 
+                        type: 'linear', display: true, position: 'left',
+                        grid: { borderDash: [2, 4], color: '#f3f4f6' }
+                    },
+                    y1: { 
+                        type: 'linear', display: true, position: 'right', 
+                        grid: { drawOnChartArea: false }
+                    }
+                }
+            }
+        });
+    }
+
+    // Admin Login
+    async function adminLogin() {
+        const pass = document.getElementById('adminPassword').value;
+        if(!pass) return;
+        
+        // Demo Mode Admin
+        if(GAS_API_URL.includes('YOUR_SCRIPT_ID') && pass === '1234') {
+            isAdminLoggedIn = true;
+            document.getElementById('admin-login-view').style.display = 'none';
+            document.getElementById('admin-data-view').style.display = 'block';
+            loadAdminData();
+            return;
+        }
+        
+        try {
+            const res = await fetch(GAS_API_URL, {
+                method: 'POST',
+                body: JSON.stringify({ action: 'login', payload: { password: pass } })
+            });
+            const result = await res.json();
+            
+            if(result.status === 'success') {
+                isAdminLoggedIn = true;
+                currentAdminPass = pass;
+                document.getElementById('admin-login-view').style.display = 'none';
+                document.getElementById('admin-data-view').style.display = 'block';
+                loadAdminData();
+            } else {
+                Swal.fire({icon: 'error', title: 'รหัสผ่านผิด', confirmButtonColor: '#f472b6'});
+            }
+        } catch (e) {
+            Swal.fire('Error', 'การเชื่อมต่อระบบล้มเหลว', 'error');
+        }
+    }
+
+    function adminLogout() {
+        isAdminLoggedIn = false;
+        currentAdminPass = '';
+        document.getElementById('admin-login-view').style.display = 'block';
+        document.getElementById('admin-data-view').style.display = 'none';
+        document.getElementById('adminPassword').value = '';
+    }
+
+    // Load Admin Data
+    async function loadAdminData() {
+        document.getElementById('admin-loader').style.display = 'block';
+        const tbody = document.getElementById('admin-table-body');
+        tbody.innerHTML = '';
+
+        const data = await fetchAllData();
+        
+        data.forEach(row => {
+            const isFail = row.FinalStatus === 'ไม่ผ่าน';
+            const statusBadge = isFail ? 
+                '<span class="bg-pink-100 text-pink-700 px-3 py-1 rounded-full text-xs font-semibold">ไม่ผ่าน</span>' : 
+                '<span class="bg-emerald-100 text-emerald-700 px-3 py-1 rounded-full text-xs font-semibold">ผ่าน</span>';
+            
+            const l1Warn = (row.L1_Result < 30 || row.L1_Result > 60) ? 'text-pink-500 font-bold bg-pink-50 rounded' : '';
+            const l2Warn = (row.L2_Result < 252 || row.L2_Result > 342) ? 'text-pink-500 font-bold bg-pink-50 rounded' : '';
+
+            tbody.innerHTML += `
+                <tr class="bg-white hover:bg-purple-50/50 transition">
+                    <td class="px-5 py-3 whitespace-nowrap">${row.TestDate}</td>
+                    <td class="px-5 py-3">${row.Department}</td>
+                    <td class="px-5 py-3 text-purple-700 font-medium">${row.DeviceName}</td>
+                    <td class="px-5 py-3 text-center ${l1Warn}">${row.L1_Result}</td>
+                    <td class="px-5 py-3 text-center ${l2Warn}">${row.L2_Result}</td>
+                    <td class="px-5 py-3 text-center">${statusBadge}</td>
+                    <td class="px-5 py-3 text-center">
+                        <button onclick="deleteRecord('${row.RecordID}')" class="text-gray-400 hover:text-pink-500 bg-gray-50 hover:bg-pink-50 p-2 rounded-lg transition" title="ลบข้อมูล"><i class="fas fa-trash"></i></button>
+                    </td>
+                </tr>
+            `;
+        });
+        document.getElementById('admin-loader').style.display = 'none';
+    }
+
+    function filterAdminTable() {
+        const query = document.getElementById('searchInput').value.toLowerCase();
+        const rows = document.getElementById('admin-table-body').getElementsByTagName('tr');
+        for (let i = 0; i < rows.length; i++) {
+            const text = rows[i].innerText.toLowerCase();
+            rows[i].style.display = text.includes(query) ? '' : 'none';
+        }
+    }
+
+    async function deleteRecord(id) {
+        const confirm = await Swal.fire({
+            title: 'ยืนยันการลบ?', text: "ลบแล้วไม่สามารถกู้คืนได้!", icon: 'warning',
+            showCancelButton: true, confirmButtonColor: '#f472b6', cancelButtonColor: '#9ca3af'
+        });
+
+        if(confirm.isConfirmed) {
+            // Demo mode logic
+            if(GAS_API_URL.includes('YOUR_SCRIPT_ID')) {
+                globalData = globalData.filter(d => d.RecordID !== id);
+                Swal.fire({icon: 'success', title: 'ลบสำเร็จ (Demo)', confirmButtonColor: '#c084fc'});
+                loadAdminData();
+                return;
+            }
+
+            Swal.fire({title: 'กำลังลบ...', allowOutsideClick: false, didOpen: () => { Swal.showLoading() }});
+            try {
+                const res = await fetch(GAS_API_URL, {
+                    method: 'POST',
+                    body: JSON.stringify({ action: 'deleteData', payload: { RecordID: id }, adminPass: currentAdminPass })
+                });
+                const result = await res.json();
+                if(result.status === 'success') {
+                    Swal.fire({icon: 'success', title: 'ลบสำเร็จ', confirmButtonColor: '#c084fc'});
+                    loadAdminData();
+                } else throw new Error(result.message);
+            } catch(e) {
+                Swal.fire('ผิดพลาด', e.message, 'error');
             }
         }
-
-        function renderCharts() {
-            // Prepare Data for Trend Chart (Last 15 records sorted chronologically)
-            const trendData = [...allRecords].sort((a, b) => new Date(a.TestDate) - new Date(b.TestDate)).slice(-15);
-            const labels = trendData.map(r => {
-                const d = new Date(r.TestDate);
-                return !isNaN(d) ? `${d.getDate()}/${d.getMonth()+1}` : '';
-            });
-            const l1Data = trendData.map(r => r.L1_Result);
-            const l2Data = trendData.map(r => r.L2_Result);
-
-            if(trendChartInstance) trendChartInstance.destroy();
-            const ctxTrend = document.getElementById('trendChart').getContext('2d');
-            trendChartInstance = new Chart(ctxTrend, {
-                type: 'line',
-                data: {
-                    labels: labels,
-                    datasets: [
-                        { label: 'Level 1', data: l1Data, borderColor: '#8b5cf6', backgroundColor: 'rgba(139, 92, 246, 0.15)', tension: 0.4, fill: true, pointBackgroundColor: '#8b5cf6' },
-                        { label: 'Level 2', data: l2Data, borderColor: '#ec4899', backgroundColor: 'rgba(236, 72, 153, 0.15)', tension: 0.4, fill: true, pointBackgroundColor: '#ec4899' }
-                    ]
-                },
-                options: {
-                    responsive: true, maintainAspectRatio: false,
-                    plugins: { legend: { position: 'top', labels: { usePointStyle: true, boxWidth: 8 } } },
-                    scales: { 
-                        y: { beginAtZero: false, grid: { borderDash: [4, 4], color: '#f1f5f9' } },
-                        x: { grid: { display: false } }
-                    }
-                }
-            });
-
-            // Prepare Data for Department Pie Chart
-            const deptCounts = {};
-            allRecords.forEach(r => {
-                const dept = r.Department || 'ไม่ระบุ';
-                deptCounts[dept] = (deptCounts[dept] || 0) + 1;
-            });
-            const deptLabels = Object.keys(deptCounts);
-            const deptData = Object.values(deptCounts);
-            
-            // Soft pastel palette for pie chart
-            const pieColors = ['#8b5cf6', '#ec4899', '#06b6d4', '#f59e0b', '#10b981', '#6366f1', '#f43f5e'];
-
-            if(deptChartInstance) deptChartInstance.destroy();
-            const ctxDept = document.getElementById('deptChart').getContext('2d');
-            deptChartInstance = new Chart(ctxDept, {
-                type: 'doughnut',
-                data: {
-                    labels: deptLabels,
-                    datasets: [{ data: deptData, backgroundColor: pieColors.slice(0, deptLabels.length), borderWidth: 2, borderColor: '#ffffff', hoverOffset: 4 }]
-                },
-                options: {
-                    responsive: true, maintainAspectRatio: false,
-                    plugins: { legend: { position: 'right', labels: { usePointStyle: true, padding: 20 } } },
-                    cutout: '75%'
-                }
-            });
-        }
-    </script>
+    }
+</script>
 </body>
 </html>
