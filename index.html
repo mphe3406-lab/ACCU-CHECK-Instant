@@ -70,6 +70,7 @@
     .status-pill{font-size:.88rem}
     .btn{cursor:pointer;font-weight:800;transition:.22s ease;font-family:inherit}
     .btn:hover{transform:translateY(-2px);background:rgba(255,255,255,.18)}
+    .hero-actions .btn:disabled{opacity:.48;cursor:not-allowed;transform:none;background:transparent}
     .btn-primary{background:white;color:var(--purple-800);border-color:white}
     .btn-primary:hover{background:#e9f3f4}
     .btn-dark{background:var(--purple-900);color:#fff;border:0}
@@ -253,23 +254,23 @@
       </div>
       <div class="hero-actions">
         <span class="status-pill" id="dataSource">● ข้อมูลตัวอย่างจากชุดที่ให้มา</span>
-        <button class="btn" onclick="loadSummary(true)">รีเฟรช</button>
-        <button class="btn" onclick="openSettings()">ตั้งค่าการเชื่อมต่อ</button>
+        <button class="btn" id="refreshTopBtn" onclick="loadSummary(true)" disabled title="เข้าสู่ระบบ Admin เพื่อใช้งาน">รีเฟรช</button>
+        <button class="btn" id="settingsTopBtn" onclick="openSettings()" disabled title="เข้าสู่ระบบ Admin เพื่อใช้งาน">ตั้งค่าการเชื่อมต่อ</button>
         <button class="btn btn-primary" id="loginTopBtn" onclick="openLogin()">เข้าสู่ระบบ Admin</button>
       </div>
     </div>
   </section>
 
   <nav class="tabs" aria-label="เมนู">
-    <button class="tab active" data-view="dashboard" onclick="switchView('dashboard',this)">Dashboard</button>
-    <button class="tab" data-view="entry" onclick="switchView('entry',this)">บันทึกผล IQC</button>
+    <button class="tab active" data-view="entry" onclick="switchView('entry',this)">บันทึกผล IQC</button>
+    <button class="tab" data-view="dashboard" onclick="switchView('dashboard',this)">Dashboard</button>
     <button class="tab" data-view="testers" onclick="switchView('testers',this)">รายชื่อผู้ทดสอบ</button>
     <button class="tab" data-view="records" onclick="switchView('records',this)">ข้อมูลทั้งหมด</button>
     <button class="tab" data-view="audit" onclick="switchView('audit',this)">ประวัติการเปลี่ยนแปลง</button>
   </nav>
 
   <main>
-    <section id="dashboard" class="view active">
+    <section id="dashboard" class="view">
       <div class="grid metrics">
         <article class="metric">
           <div class="metric-label">จำนวนการทดสอบทั้งหมด</div>
@@ -367,15 +368,9 @@
       </div>
     </section>
 
-    <section id="entry" class="view">
+    <section id="entry" class="view active">
       <article class="panel">
-        <div class="lock-box" id="entryLocked">
-          <div class="lock-icon">Admin</div>
-          <h3>การบันทึกผลต้องเข้าสู่ระบบ</h3>
-          <p class="mini">เข้าสู่ระบบ Admin เพื่อเพิ่มหรือแก้ไขผล IQC</p>
-          <button class="btn btn-dark" onclick="openLogin('entry')">เข้าสู่ระบบ</button>
-        </div>
-        <div id="entryContent" style="display:none">
+        <div id="entryContent">
           <div class="panel-title">
             <h2 id="entryTitle">บันทึกผล IQC ใหม่</h2>
             <span class="mini" id="editingId">รายการใหม่</span>
@@ -738,6 +733,22 @@
     });
   }
 
+  async function loadPublicPersonnel(){
+    if(state.personnel.length){renderPersonnelDirectory();return}
+    if(window.IQC_PERSONNEL_DATA){applyPersonnelDirectory(window.IQC_PERSONNEL_DATA);return}
+    if(isLocalMode()){
+      const records=readLocalRecords();
+      applyPersonnelDirectory(records.map(record=>({fullName:record.Tester,position:record.Position})));
+      return;
+    }
+    try{
+      const response=await api({action:'personnel'});
+      if(response.ok)applyPersonnelDirectory(response.people||[],response.positions||[]);
+    }catch(error){
+      showToast('โหลดรายชื่อผู้ทดสอบไม่สำเร็จ');
+    }
+  }
+
   function renderPersonnelDirectory(){
     document.getElementById('positionOptions').innerHTML=state.positions.map(position=>`<option value="${esc(position)}"></option>`).join('');
   }
@@ -935,7 +946,7 @@
     try{
       const health=await api({action:'health'});
       state.remoteCapabilities=Array.isArray(health.capabilities)?health.capabilities:[];
-      return ['save','personnel'].every(capability=>state.remoteCapabilities.includes(capability));
+      return ['create','personnel'].every(capability=>state.remoteCapabilities.includes(capability));
     }catch(error){
       state.remoteCapabilities=null;
       return true;
@@ -950,6 +961,7 @@
   }
 
   async function loadSummary(manual=false){
+    if(manual&&!state.token){openLogin();return}
     if(isLocalMode()){
       try{
         const records=readLocalRecords();
@@ -971,7 +983,7 @@
   }
 
   function switchView(view){
-    const protectedViews=['entry','testers','records','audit'];
+    const protectedViews=['testers','records','audit'];
     if(protectedViews.includes(view)&&!state.token){
       state.pendingView=view;
       document.querySelectorAll('.view').forEach(element=>element.classList.toggle('active',element.id===view));
@@ -981,13 +993,20 @@
     }
     document.querySelectorAll('.view').forEach(element=>element.classList.toggle('active',element.id===view));
     document.querySelectorAll('.tab').forEach(tab=>tab.classList.toggle('active',tab.dataset.view===view));
-    if(['entry','testers','records'].includes(view)&&state.token&&!state.records.length)loadProtectedData(false);
+    if(['testers','records'].includes(view)&&state.token&&!state.records.length)loadProtectedData(false);
     if(view==='audit'&&state.token&&!state.audit.length)loadAuditData(false);
-    if(view==='entry'&&!document.getElementById('testDate').value)resetRecordForm();
+    if(view==='entry'){
+      if(!state.personnel.length)loadPublicPersonnel();
+      if(!document.getElementById('testDate').value)resetRecordForm();
+    }
   }
 
   function openLogin(target=''){
-    if(target)state.pendingView=target;
+    if(target){
+      state.pendingView=target;
+    }else if(!state.pendingView){
+      state.pendingView=document.querySelector('.view.active')?.id||'entry';
+    }
     if(state.token){if(!state.records.length)loadProtectedData(false);return}
     document.getElementById('loginError').textContent='';
     document.getElementById('loginModeNote').textContent=isLocalMode()
@@ -1025,7 +1044,7 @@
       closeLogin();
       setLoggedInUI(true);
       await loadProtectedData(false);
-      const target=state.pendingView||'dashboard';
+      const target=state.pendingView||'entry';
       state.pendingView='';
       switchView(target);
       showToast('เข้าสู่ระบบสำเร็จ');
@@ -1037,7 +1056,12 @@
     const button=document.getElementById('loginTopBtn');
     button.textContent=loggedIn?'ออกจากระบบ':'เข้าสู่ระบบ Admin';
     button.onclick=loggedIn?logout:()=>openLogin();
-    ['entry','testers','records','audit'].forEach(view=>{
+    ['refreshTopBtn','settingsTopBtn'].forEach(id=>{
+      const control=document.getElementById(id);
+      control.disabled=!loggedIn;
+      control.title=loggedIn?'':'เข้าสู่ระบบ Admin เพื่อใช้งาน';
+    });
+    ['testers','records','audit'].forEach(view=>{
       document.getElementById(view+'Locked').style.display=loggedIn?'none':'block';
       document.getElementById(view+'Content').style.display=loggedIn?'block':'none';
     });
@@ -1047,7 +1071,7 @@
     try{if(!isLocalMode()&&state.token)await api({action:'logout',token:state.token})}catch(error){}
     state.token='';state.testers=[];state.records=[];state.audit=[];state.personnel=[];state.positions=[];
     sessionStorage.removeItem(TOKEN_KEY);sessionStorage.removeItem(TOKEN_MODE_KEY);
-    setLoggedInUI(false);resetRecordForm();switchView('dashboard');showToast('ออกจากระบบแล้ว');
+    setLoggedInUI(false);resetRecordForm();await loadPublicPersonnel();switchView('entry');showToast('ออกจากระบบแล้ว');
   }
 
   async function loadProtectedData(showMessage=true){
@@ -1229,9 +1253,10 @@
     errorBox.textContent='';button.disabled=true;button.textContent='กำลังบันทึก';
     try{
       let message='';
+      const editing=Boolean(record.ID);
+      if(editing&&!state.token)throw new Error('การแก้ไขรายการเดิมต้องเข้าสู่ระบบ Admin');
       if(isLocalMode()){
         const records=readLocalRecords();
-        const editing=Boolean(record.ID);
         const saved={...record,TestDate:toDisplayDate(record.TestDate),ControlExp:toDisplayDate(record.ControlExp),Timestamp:localTimestamp()};
         let before=null;
         if(editing){
@@ -1247,15 +1272,27 @@
         appendLocalAudit(editing?'UPDATE':'CREATE',saved.ID,before,saved);
         message=editing?'แก้ไขรายการเรียบร้อยแล้ว':'บันทึกรายการเรียบร้อยแล้ว';
       }else{
-        requireRemoteCapability('save');
-        const response=await api({action:'save',token:state.token,record:JSON.stringify(record)});
+        const action=state.token?'save':'create';
+        requireRemoteCapability(action);
+        const params={action,record:JSON.stringify(record)};
+        if(state.token)params.token=state.token;
+        const response=await api(params);
         if(!response.ok){
           if(response.code==='UNAUTHORIZED')throw new Error('Session หมดอายุ กรุณาเข้าสู่ระบบใหม่');
           throw new Error(response.message||'บันทึกข้อมูลไม่สำเร็จ');
         }
         message=response.message;
       }
-      state.audit=[];await loadSummary(false);await loadProtectedData(false);resetRecordForm();switchView('records');showToast(message);
+      state.audit=[];
+      await loadSummary(false);
+      resetRecordForm();
+      if(state.token){
+        await loadProtectedData(false);
+        switchView('records');
+      }else{
+        switchView('entry');
+      }
+      showToast(message);
     }catch(error){errorBox.textContent=error.message}
     finally{button.disabled=false;if(!document.getElementById('recordId').value)button.textContent='บันทึกผล IQC'}
   }
@@ -1423,6 +1460,7 @@
   }
 
   function openSettings(){
+    if(!state.token){openLogin();return}
     const saved=localStorage.getItem(GAS_URL_KEY);
     document.getElementById('gasUrlInput').value=saved===null?getGasUrl():saved;
     document.getElementById('settingsError').textContent='';
@@ -1431,6 +1469,7 @@
   function closeSettings(){document.getElementById('settingsModal').classList.remove('show')}
 
   async function saveSettings(){
+    if(!state.token){closeSettings();openLogin();return}
     const input=document.getElementById('gasUrlInput').value.trim();
     const errorBox=document.getElementById('settingsError');
     if(input&&!isConfiguredUrl(input)){errorBox.textContent='URL ต้องเป็น Google Apps Script Web App ที่ลงท้ายด้วย /exec';return}
@@ -1442,7 +1481,9 @@
       sessionStorage.removeItem(TOKEN_KEY);sessionStorage.removeItem(TOKEN_MODE_KEY);setLoggedInUI(false);
     }
     await loadPersonnelSource();
-    loadSummary(true);
+    await loadPublicPersonnel();
+    loadSummary(false);
+    showToast('บันทึกการตั้งค่าการเชื่อมต่อแล้ว');
   }
 
   async function initialize(){
@@ -1451,8 +1492,9 @@
     }
     document.getElementById('password').addEventListener('keydown',event=>{if(event.key==='Enter')login()});
     document.addEventListener('keydown',event=>{if(event.key==='Escape'){closeLogin();closeSettings()}});
-    await loadPersonnelSource();
     setLoggedInUI(Boolean(state.token));
+    await loadPersonnelSource();
+    await loadPublicPersonnel();
     resetRecordForm();
     loadSummary(false);
     if(state.token)loadProtectedData(false);
