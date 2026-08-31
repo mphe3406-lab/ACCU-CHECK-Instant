@@ -1,917 +1,1464 @@
 <!DOCTYPE html>
 <html lang="th">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>IQC ACCU-CHEK Instant | โรงพยาบาลหนองสองห้อง</title>
-    
-    <!-- Tailwind CSS -->
-    <script src="https://cdn.tailwindcss.com"></script>
-    
-    <!-- SweetAlert2 -->
-    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-    
-    <!-- Chart.js -->
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    
-    <!-- Font Awesome -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-
-    <!-- Google Fonts -->
-    <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-
-    <style>
-        body { 
-            font-family: 'Sarabun', sans-serif; 
-            background-color: #faf5ff; /* Soft Pastel Purple (purple-50) */ 
-            color: #4b5563;
-        }
-        
-        .tab-content { display: none; }
-        .tab-content.active { display: block; animation: fadeIn 0.4s cubic-bezier(0.4, 0, 0.2, 1); }
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(15px); } to { opacity: 1; transform: translateY(0); } }
-        
-        /* Custom Pastel Loader */
-        .loader {
-            border: 4px solid #f3f3f3; 
-            border-top: 4px solid #c084fc; /* purple-400 */ 
-            border-radius: 50%;
-            width: 45px; height: 45px; 
-            animation: spin 1s linear infinite; 
-            margin: 30px auto;
-        }
-        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-        
-        /* Soft Custom Input Styling */
-        input:not([type="radio"]), select, textarea {
-            width: 100%; padding: 0.6rem 1rem; 
-            border: 1px solid #e5e7eb; 
-            border-radius: 1rem; /* Softer rounded corners */
-            outline: none; 
-            background-color: #ffffff;
-            transition: all 0.3s ease;
-        }
-        input:focus:not([type="radio"]), select:focus, textarea:focus {
-            border-color: #c084fc; 
-            box-shadow: 0 0 0 4px rgba(192, 132, 252, 0.15); /* Soft purple glow */
-        }
-        
-        /* Custom Scrollbar for tables */
-        ::-webkit-scrollbar { width: 8px; height: 8px; }
-        ::-webkit-scrollbar-track { background: #f3f4f6; border-radius: 4px; }
-        ::-webkit-scrollbar-thumb { background: #d8b4fe; border-radius: 4px; }
-        ::-webkit-scrollbar-thumb:hover { background: #c084fc; }
-    </style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#4b1f74">
+  <title>IQC Dashboard | ACCU-CHEK Instant</title>
+  <style>
+    :root{
+      --bg1:#f3f6f7;
+      --bg2:#e8eef0;
+      --purple-950:#102f34;
+      --purple-900:#143f46;
+      --purple-800:#18535c;
+      --purple-700:#1d6871;
+      --purple-600:#267b82;
+      --purple-500:#4e9398;
+      --purple-300:#a9c9cc;
+      --purple-200:#d5e4e6;
+      --purple-100:#edf4f4;
+      --ink:#1e2b30;
+      --muted:#607078;
+      --white:#fff;
+      --success:#16845b;
+      --warning:#b46b0c;
+      --danger:#b43f4d;
+      --shadow:0 10px 28px rgba(28,55,60,.12);
+      --soft-shadow:0 4px 14px rgba(28,55,60,.08);
+      --radius:8px;
+    }
+    *{box-sizing:border-box}
+    html{scroll-behavior:smooth}
+    body{
+      margin:0;
+      font-family:"Noto Sans Thai","Leelawadee UI",Tahoma,Arial,sans-serif;
+      color:var(--ink);
+      background:var(--bg1);
+      min-height:100vh;
+    }
+    .app{max-width:1520px;margin:auto;padding:24px}
+    .hero{
+      position:relative;
+      border-radius:8px;
+      padding:22px 24px;
+      color:white;
+      background:#143f46;
+      box-shadow:var(--shadow);
+      border:1px solid #24616a;
+    }
+    .hero-row{display:flex;gap:20px;align-items:center;justify-content:space-between;position:relative;z-index:1}
+    .brand{display:flex;gap:16px;align-items:center;min-width:0}
+    .brand>div:last-child{min-width:0}
+    .brand-icon{
+      width:58px;height:58px;border-radius:8px;display:grid;place-items:center;
+      background:#fff;
+      border:1px solid rgba(255,255,255,.28);
+      color:#143f46;font-size:17px;font-weight:900
+    }
+    h1{margin:0;font-size:clamp(1.35rem,2.3vw,2.2rem);line-height:1.25;overflow-wrap:anywhere}
+    .subtitle{margin:6px 0 0;color:#dcebed;font-size:.97rem}
+    .hero-actions{display:flex;gap:10px;align-items:center;flex-wrap:wrap;justify-content:flex-end}
+    .status-pill,.btn{
+      border:1px solid rgba(255,255,255,.20);
+      border-radius:6px;
+      padding:11px 15px;
+      background:rgba(255,255,255,.11);
+      color:white;
+      backdrop-filter:blur(12px);
+    }
+    .status-pill{font-size:.88rem}
+    .btn{cursor:pointer;font-weight:800;transition:.22s ease;font-family:inherit}
+    .btn:hover{transform:translateY(-2px);background:rgba(255,255,255,.18)}
+    .btn-primary{background:white;color:var(--purple-800);border-color:white}
+    .btn-primary:hover{background:#e9f3f4}
+    .btn-dark{background:var(--purple-900);color:#fff;border:0}
+    .btn-dark:hover{background:var(--purple-800)}
+    .tabs{
+      margin:20px 0;
+      display:flex;gap:10px;flex-wrap:wrap;
+      padding:9px;
+      background:rgba(255,255,255,.58);
+      border:1px solid rgba(255,255,255,.72);
+      border-radius:8px;
+      box-shadow:var(--soft-shadow);
+      backdrop-filter:blur(16px);
+    }
+    .tab{
+      border:0;background:transparent;padding:11px 17px;border-radius:6px;
+      color:var(--purple-800);font:800 .95rem inherit;cursor:pointer
+    }
+    .tab.active{background:var(--purple-800);color:#fff;box-shadow:0 4px 10px rgba(24,83,92,.2)}
+    .view{display:none}.view.active{display:block}
+    .grid{display:grid;gap:18px}
+    .metrics{grid-template-columns:repeat(4,minmax(0,1fr))}
+    .metric,.panel{
+      position:relative;
+      background:#fff;
+      border:1px solid #dce5e7;
+      box-shadow:var(--soft-shadow);
+      border-radius:var(--radius);
+    }
+    .metric{padding:20px;min-height:135px;overflow:hidden}
+    .metric-label{color:var(--muted);font-weight:700;font-size:.9rem}
+    .metric-value{font-size:2.25rem;font-weight:900;color:var(--purple-900);margin:12px 0 4px}
+    .metric-foot{font-size:.84rem;color:var(--muted)}
+    .metric-icon{
+      position:absolute;right:17px;bottom:17px;width:42px;height:42px;border-radius:14px;
+      display:grid;place-items:center;background:var(--purple-100);font-size:12px;font-weight:900;color:var(--purple-800)
+    }
+    .two-col{grid-template-columns:1.15fr .85fr;margin-top:18px}
+    .three-col{grid-template-columns:1fr 1fr 1fr;margin-top:18px}
+    .panel{padding:22px}
+    .panel-title{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:16px}
+    .panel-title h2{margin:0;font-size:1.05rem;color:var(--purple-900)}
+    .mini{font-size:.82rem;color:var(--muted)}
+    .bars{display:flex;flex-direction:column;gap:12px}
+    .bar-row{display:grid;grid-template-columns:minmax(115px,1.1fr) minmax(150px,3fr) 42px;gap:12px;align-items:center}
+    .bar-label{font-size:.88rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+    .bar-track{height:13px;background:#dfe9ea;border-radius:999px;overflow:hidden;box-shadow:inset 2px 2px 6px rgba(28,55,60,.1)}
+    .bar-fill{height:100%;border-radius:999px;background:var(--purple-600);transition:width .5s ease}
+    .bar-num{text-align:right;font-weight:900;color:var(--purple-800)}
+    .donut-wrap{display:flex;align-items:center;justify-content:center;gap:28px;min-height:240px;flex-wrap:wrap}
+    .donut{
+      width:170px;height:170px;border-radius:50%;
+      display:grid;place-items:center;position:relative;
+      background:conic-gradient(var(--success) 0deg 360deg,#eadcf4 360deg);
+      box-shadow:12px 14px 28px rgba(62,32,83,.17),-8px -8px 22px rgba(255,255,255,.88)
+    }
+    .donut::before{content:"";width:120px;height:120px;border-radius:50%;background:#fbfdfd;position:absolute;box-shadow:inset 6px 6px 16px rgba(28,55,60,.08)}
+    .donut-center{position:relative;text-align:center;z-index:1}
+    .donut-big{font-weight:900;font-size:1.65rem;color:var(--purple-900)}
+    .legend{display:grid;gap:11px}
+    .legend-item{display:flex;align-items:center;gap:9px;font-size:.9rem}
+    .dot{width:11px;height:11px;border-radius:50%}
+    .dot.ok{background:var(--success)} .dot.warn{background:var(--warning)} .dot.fail{background:var(--danger)}
+    .stat-stack{display:grid;gap:10px}
+    .stat-line{display:flex;justify-content:space-between;gap:15px;padding:12px 14px;background:#f0f5f5;border-radius:6px}
+    .stat-line strong{color:var(--purple-900)}
+    .alert{
+      padding:14px 16px;border-radius:16px;border-left:5px solid var(--warning);
+      background:#fff8ea;color:#72511b;font-size:.9rem;line-height:1.6
+    }
+    .table-tools{display:flex;gap:10px;justify-content:space-between;align-items:center;flex-wrap:wrap;margin-bottom:14px}
+    .input{
+      width:100%;border:1px solid #cbd9dc;border-radius:6px;padding:12px 14px;
+      background:rgba(255,255,255,.9);outline:none;font:inherit;color:var(--ink);
+      box-shadow:inset 2px 2px 6px rgba(90,50,119,.06)
+    }
+    .input:focus{border-color:var(--purple-500);box-shadow:0 0 0 4px rgba(154,102,196,.12)}
+    .search{max-width:390px}
+    .table-wrap{overflow:auto;border-radius:6px;border:1px solid #dce5e7;background:#fff}
+    table{width:100%;border-collapse:collapse;min-width:980px}
+    th,td{padding:12px 13px;border-bottom:1px solid #e4ebec;text-align:left;font-size:.86rem;vertical-align:top}
+    th{position:sticky;top:0;background:#e8f0f1;color:var(--purple-900);font-weight:900;z-index:2}
+    tr:hover td{background:#f7fafa}
+    .badge{display:inline-flex;align-items:center;gap:6px;padding:6px 9px;border-radius:999px;font-size:.78rem;font-weight:900;white-space:nowrap}
+    .badge-ok{background:#e7f6ef;color:#176a4e}
+    .badge-warn{background:#fff0d8;color:#925a0d}
+    .lock-box{text-align:center;padding:54px 20px}
+    .lock-icon{font-size:52px;margin-bottom:10px}
+    .lock-box h3{color:var(--purple-900);margin:8px 0}
+    .empty{padding:38px;text-align:center;color:var(--muted)}
+    .footer{padding:24px 5px 8px;text-align:center;color:#76667f;font-size:.8rem}
+    .modal{
+      position:fixed;inset:0;z-index:50;display:none;place-items:center;padding:20px;
+      background:rgba(32,13,47,.58);backdrop-filter:blur(12px)
+    }
+    .modal.show{display:grid}
+    .modal-card{
+      width:min(440px,100%);padding:26px;border-radius:8px;
+      background:#fff;
+      box-shadow:0 30px 70px rgba(25,8,38,.40);border:1px solid rgba(255,255,255,.9)
+    }
+    .modal-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:18px}
+    .modal-top h2{margin:0;color:var(--purple-900)}
+    .x{border:0;background:#e1ebec;color:var(--purple-800);width:36px;height:36px;border-radius:6px;cursor:pointer;font-size:18px}
+    .field{margin:12px 0}
+    .field label{display:block;font-size:.84rem;font-weight:800;color:var(--purple-900);margin-bottom:6px}
+    .login-actions{display:flex;gap:10px;margin-top:18px}
+    .login-actions .btn{flex:1}
+    .error{color:var(--danger);font-size:.84rem;min-height:20px;margin-top:10px}
+    .form-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px 18px}
+    .form-grid .field{margin:0}
+    .form-grid .span-2{grid-column:1/-1}
+    .form-actions{display:flex;gap:10px;justify-content:flex-end;margin-top:20px;flex-wrap:wrap}
+    .form-note{margin:0 0 18px;padding:12px 14px;border-left:4px solid var(--purple-600);background:var(--purple-100);color:var(--muted);font-size:.88rem}
+    .btn-secondary{color:var(--purple-800);border:1px solid #b9ced1;background:#fff}
+    .btn-danger{color:#fff;border:0;background:var(--danger)}
+    .btn-small{padding:7px 9px;border-radius:5px;font-size:.78rem;white-space:nowrap}
+    .row-actions{display:flex;gap:6px}
+    .connection-note{margin:10px 0 0;color:var(--muted);font-size:.82rem;line-height:1.5}
+    .filters{display:flex;gap:8px;align-items:center;flex:1;flex-wrap:wrap}
+    .filters .search{flex:1 1 260px}
+    .filter-select{width:auto;min-width:150px}
+    .pagination{display:flex;align-items:center;justify-content:flex-end;gap:10px;margin-top:14px;flex-wrap:wrap}
+    .pagination .btn:disabled{opacity:.45;cursor:not-allowed;transform:none}
+    .json-preview{margin:6px 0 0;max-width:330px;max-height:150px;overflow:auto;white-space:pre-wrap;word-break:break-word;font:12px/1.45 Consolas,monospace;color:#34464b;background:#f2f6f6;padding:8px;border-radius:5px}
+    details summary{cursor:pointer;color:var(--purple-700);font-weight:700}
+    .hidden-input{display:none}
+    .autocomplete{position:relative}
+    .suggestions{
+      display:none;position:absolute;z-index:20;top:calc(100% + 5px);left:0;right:0;
+      max-height:320px;overflow:auto;background:#fff;border:1px solid #b9ced1;border-radius:6px;
+      box-shadow:0 12px 28px rgba(28,55,60,.18)
+    }
+    .suggestions.show{display:block}
+    .suggestion{
+      display:grid;width:100%;gap:2px;padding:10px 12px;border:0;border-bottom:1px solid #e4ebec;
+      background:#fff;color:var(--ink);text-align:left;font:inherit;cursor:pointer
+    }
+    .suggestion:last-child{border-bottom:0}
+    .suggestion:hover,.suggestion.active{background:var(--purple-100)}
+    .suggestion strong{font-size:.9rem;color:var(--purple-900)}
+    .suggestion span{font-size:.78rem;color:var(--muted)}
+    .suggestion-empty{padding:14px;color:var(--muted);font-size:.84rem}
+    .toast{
+      position:fixed;right:22px;bottom:22px;z-index:80;max-width:380px;
+      padding:13px 16px;border-radius:15px;color:#fff;background:var(--purple-900);
+      box-shadow:0 16px 35px rgba(35,13,52,.26);
+      transform:translateY(25px);opacity:0;pointer-events:none;transition:.25s
+    }
+    .toast.show{transform:none;opacity:1}
+    .spinner{
+      width:18px;height:18px;border-radius:50%;border:3px solid rgba(255,255,255,.4);border-top-color:#fff;
+      display:inline-block;vertical-align:-4px;animation:spin .8s linear infinite
+    }
+    @keyframes spin{to{transform:rotate(360deg)}}
+    @media(max-width:1050px){.metrics{grid-template-columns:repeat(2,1fr)}.two-col,.three-col{grid-template-columns:1fr}}
+    @media(max-width:700px){
+      .app{padding:13px}.hero{padding:21px 18px;border-radius:8px}.hero-row{align-items:flex-start;flex-direction:column}
+      .hero-actions{justify-content:flex-start;width:100%}.hero-actions .status-pill{flex-basis:100%;overflow-wrap:anywhere}.hero-actions .btn{flex:1 1 145px;white-space:normal}
+      .brand-icon{width:52px;height:52px;border-radius:8px;flex:0 0 52px}
+      .metrics{grid-template-columns:1fr 1fr;gap:12px}.metric{min-height:132px;padding:16px}.metric-value{font-size:1.8rem}
+      .panel{padding:17px}.bar-row{grid-template-columns:105px 1fr 32px;gap:8px}
+      .form-grid{grid-template-columns:1fr}.form-grid .span-2{grid-column:auto}
+    }
+    @media(max-width:600px){
+      .metrics{grid-template-columns:1fr}.tab{flex:1 1 calc(50% - 10px)}.status-pill{display:none}
+      .hero-actions .btn{flex:1 1 calc(50% - 10px)}
+    }
+  </style>
 </head>
-<body class="antialiased selection:bg-purple-200 selection:text-purple-900">
-
-<div class="min-h-screen flex flex-col">
-    <!-- Header/Navbar (Pastel Gradient) -->
-    <nav class="bg-gradient-to-r from-purple-400 via-fuchsia-400 to-pink-400 text-white shadow-md sticky top-0 z-50">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div class="flex justify-between h-16">
-                <div class="flex items-center drop-shadow-sm">
-                    <i class="fas fa-heart text-2xl mr-3 text-pink-100"></i>
-                    <span class="font-bold text-lg sm:text-xl truncate tracking-wide">IQC ACCU-CHEK<br><span class="text-xs text-purple-100 font-medium font-light">รพ.หนองสองห้อง</span></span>
-                </div>
-                <div class="flex items-center space-x-1 sm:space-x-3">
-                    <button onclick="switchTab('form')" id="btn-tab-form" class="px-3 sm:px-4 py-2 rounded-xl text-sm font-medium bg-white/20 backdrop-blur-md shadow-sm transition"><i class="fas fa-pen-nib mr-1"></i> บันทึก</button>
-                    <button onclick="switchTab('dashboard')" id="btn-tab-dashboard" class="px-3 sm:px-4 py-2 rounded-xl text-sm font-medium hover:bg-white/20 transition"><i class="fas fa-chart-line mr-1"></i> รายงาน</button>
-                    <button onclick="switchTab('admin')" id="btn-tab-admin" class="px-3 sm:px-4 py-2 rounded-xl text-sm font-medium hover:bg-white/20 transition"><i class="fas fa-magic mr-1"></i> จัดการ</button>
-                </div>
-            </div>
+<body>
+<div class="app">
+  <section class="hero">
+    <div class="hero-row">
+      <div class="brand">
+        <div class="brand-icon">IQC</div>
+        <div>
+          <h1>IQC Dashboard · ACCU-CHEK Instant</h1>
+          <p class="subtitle">ระบบติดตามผลการควบคุมคุณภาพภายในเครื่องตรวจน้ำตาลปลายนิ้ว</p>
         </div>
-    </nav>
+      </div>
+      <div class="hero-actions">
+        <span class="status-pill" id="dataSource">● ข้อมูลตัวอย่างจากชุดที่ให้มา</span>
+        <button class="btn" onclick="loadSummary(true)">รีเฟรช</button>
+        <button class="btn" onclick="openSettings()">ตั้งค่าการเชื่อมต่อ</button>
+        <button class="btn btn-primary" id="loginTopBtn" onclick="openLogin()">เข้าสู่ระบบ Admin</button>
+      </div>
+    </div>
+  </section>
 
-    <!-- Main Content -->
-    <main class="flex-grow p-4 sm:p-6 lg:p-8 max-w-7xl mx-auto w-full">
-        
-        <!-- ======================= TAB 1: FORM ======================= -->
-        <div id="tab-form" class="tab-content active max-w-3xl mx-auto">
-            <div class="bg-white rounded-2xl shadow-[0_8px_30px_rgb(0,0,0,0.04)] overflow-hidden border border-purple-50">
-                
-                <div class="bg-purple-50/70 px-6 py-5 border-b border-purple-100 flex justify-between items-center">
-                    <h2 class="text-xl font-bold text-purple-800 flex items-center"><i class="fas fa-clipboard-check mr-2 text-purple-400 text-2xl"></i> แบบฟอร์มบันทึกผล IQC</h2>
-                    <span class="text-xs font-medium px-3 py-1.5 bg-white text-purple-600 rounded-full shadow-sm border border-purple-100 flex items-center"><i class="far fa-calendar-alt mr-1"></i> <span id="current-date-badge"></span></span>
-                </div>
-                
-                <form id="iqcForm" class="p-6 sm:p-8 space-y-8">
-                    <!-- ส่วนที่ 1: ข้อมูลทั่วไป -->
-                    <div class="space-y-4">
-                        <h3 class="text-lg font-semibold text-purple-700 border-b border-purple-100 pb-2 flex items-center"><span class="bg-purple-100 text-purple-600 w-6 h-6 rounded-full flex items-center justify-center text-sm mr-2">1</span> ข้อมูลทั่วไป</h3>
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
-                            <div>
-                                <label class="block text-sm font-medium text-gray-700 mb-1.5">วันที่ทดสอบ <span class="text-pink-500">*</span></label>
-                                <input type="date" id="TestDate" required class="text-gray-600">
-                            </div>
-                            <div>
-                                <label class="block text-sm font-medium text-gray-700 mb-1.5">หน่วยงาน <span class="text-pink-500">*</span></label>
-                                <select id="Department" required onchange="checkOtherSelect(this, 'DeptOtherContainer', 'DeptOther')" class="text-gray-600">
-                                    <option value="">-- เลือกหน่วยงาน --</option>
-                                    <option value="อุบัติเหตุฉุกเฉิน">อุบัติเหตุฉุกเฉิน</option>
-                                    <option value="ผู้ป่วยนอก">ผู้ป่วยนอก</option>
-                                    <option value="ผู้ป่วยในชาย">ผู้ป่วยในชาย</option>
-                                    <option value="ผู้ป่วยในหญิง">ผู้ป่วยในหญิง</option>
-                                    <option value="คลินิกเฉพาะโรค">คลินิกเฉพาะโรค</option>
-                                    <option value="ห้องคลอด">ห้องคลอด</option>
-                                    <option value="ANC">ANC</option>
-                                    <option value="ห้องปฏิบัติการ">ห้องปฏิบัติการ</option>
-                                    <option value="Other">อื่นๆ (โปรดระบุ)</option>
-                                </select>
-                                <div id="DeptOtherContainer" class="hidden mt-2">
-                                    <input type="text" id="DeptOther" placeholder="ระบุหน่วยงาน...">
-                                </div>
-                            </div>
-                            <div>
-                                <label class="block text-sm font-medium text-gray-700 mb-1.5">ผู้ทดสอบ <span class="text-pink-500">*</span></label>
-                                <input type="text" id="TesterName" placeholder="ชื่อ-สกุล" required>
-                            </div>
-                            <div>
-                                <label class="block text-sm font-medium text-gray-700 mb-1.5">ตำแหน่ง <span class="text-pink-500">*</span></label>
-                                <select id="Position" required onchange="checkOtherSelect(this, 'PosOtherContainer', 'PosOther')" class="text-gray-600">
-                                    <option value="">-- เลือกตำแหน่ง --</option>
-                                    <option value="พยาบาลวิชาชีพ">พยาบาลวิชาชีพ</option>
-                                    <option value="นักเทคนิคการแพทย์">นักเทคนิคการแพทย์</option>
-                                    <option value="นักวิชาการสาธารณสุข">นักวิชาการสาธารณสุข</option>
-                                    <option value="พนักงานช่วยเหลือคนไข้">พนักงานช่วยเหลือคนไข้</option>
-                                    <option value="Other">อื่นๆ (โปรดระบุ)</option>
-                                </select>
-                                <div id="PosOtherContainer" class="hidden mt-2">
-                                    <input type="text" id="PosOther" placeholder="ระบุตำแหน่ง...">
-                                </div>
-                            </div>
-                        </div>
-                    </div>
+  <nav class="tabs" aria-label="เมนู">
+    <button class="tab active" data-view="dashboard" onclick="switchView('dashboard',this)">Dashboard</button>
+    <button class="tab" data-view="entry" onclick="switchView('entry',this)">บันทึกผล IQC</button>
+    <button class="tab" data-view="testers" onclick="switchView('testers',this)">รายชื่อผู้ทดสอบ</button>
+    <button class="tab" data-view="records" onclick="switchView('records',this)">ข้อมูลทั้งหมด</button>
+    <button class="tab" data-view="audit" onclick="switchView('audit',this)">ประวัติการเปลี่ยนแปลง</button>
+  </nav>
 
-                    <!-- ส่วนที่ 2: ข้อมูลเครื่องและน้ำยา -->
-                    <div class="space-y-4">
-                        <h3 class="text-lg font-semibold text-purple-700 border-b border-purple-100 pb-2 flex items-center"><span class="bg-purple-100 text-purple-600 w-6 h-6 rounded-full flex items-center justify-center text-sm mr-2">2</span> ข้อมูลเครื่องมือและน้ำยา</h3>
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
-                            <div>
-                                <label class="block text-sm font-medium text-gray-700 mb-1.5">ชื่อเครื่อง/รหัสเครื่อง <span class="text-pink-500">*</span></label>
-                                <input type="text" id="DeviceName" placeholder="เช่น ACCU-01" required>
-                            </div>
-                            <div>
-                                <label class="block text-sm font-medium text-gray-700 mb-1.5">สถานะแบตเตอรี่ <span class="text-pink-500">*</span></label>
-                                <div class="flex items-center space-x-4 mt-3 bg-gray-50 p-3 rounded-xl border border-gray-100">
-                                    <label class="inline-flex items-center cursor-pointer">
-                                        <input type="radio" name="BatteryStatus" value="แบตเตอรี่ปกติ" class="form-radio h-5 w-5 text-purple-500 border-gray-300 focus:ring-purple-400" required>
-                                        <span class="ml-2 text-sm text-gray-700"><i class="fas fa-battery-full text-green-400 mr-1"></i> ปกติ</span>
-                                    </label>
-                                    <label class="inline-flex items-center cursor-pointer">
-                                        <input type="radio" name="BatteryStatus" value="แบตเตอรี่ต่ำ" class="form-radio h-5 w-5 text-pink-500 border-gray-300 focus:ring-pink-400">
-                                        <span class="ml-2 text-sm text-gray-700"><i class="fas fa-battery-quarter text-pink-400 mr-1"></i> ต่ำ</span>
-                                    </label>
-                                </div>
-                            </div>
-                            <div>
-                                <label class="block text-sm font-medium text-gray-700 mb-1.5">Lot. Strip <span class="text-pink-500">*</span></label>
-                                <input type="text" id="StripLot" placeholder="ระบุเลข Lot" required>
-                            </div>
-                            <div>
-                                <label class="block text-sm font-medium text-gray-700 mb-1.5">วันหมดอายุของ Strip <span class="text-pink-500">*</span></label>
-                                <input type="date" id="StripExpiry" required onchange="checkExpiry(this.value)" class="text-gray-600">
-                                <p id="expiry-warning" class="text-xs text-pink-500 font-bold hidden mt-2 bg-pink-50 p-2 rounded-lg"><i class="fas fa-exclamation-circle"></i> Strip หมดอายุแล้ว!</p>
-                            </div>
-                        </div>
-                    </div>
+  <main>
+    <section id="dashboard" class="view active">
+      <div class="grid metrics">
+        <article class="metric">
+          <div class="metric-label">จำนวนการทดสอบทั้งหมด</div>
+          <div class="metric-value" id="mTotal">21</div>
+          <div class="metric-foot">รายการ IQC ในฐานข้อมูล</div>
+          <div class="metric-icon">ALL</div>
+        </article>
+        <article class="metric">
+          <div class="metric-label">อัตราผ่าน IQC</div>
+          <div class="metric-value" id="mPassRate">100%</div>
+          <div class="metric-foot" id="mPassFoot">ผ่าน 21 / 21 รายการ</div>
+          <div class="metric-icon">PASS</div>
+        </article>
+        <article class="metric">
+          <div class="metric-label">เครื่องที่ได้รับการตรวจ</div>
+          <div class="metric-value" id="mMachines">20</div>
+          <div class="metric-foot" id="mDeptFoot">ครอบคลุม 7 หน่วยงาน</div>
+          <div class="metric-icon">UNIT</div>
+        </article>
+        <article class="metric">
+          <div class="metric-label">พบแบตเตอรี่ต่ำ</div>
+          <div class="metric-value" id="mBatteryLow">5</div>
+          <div class="metric-foot" id="mBatteryFoot">23.8% ของการตรวจทั้งหมด</div>
+          <div class="metric-icon">LOW</div>
+        </article>
+      </div>
 
-                    <!-- ส่วนที่ 3: ผลการทดสอบ -->
-                    <div class="space-y-4">
-                        <h3 class="text-lg font-semibold text-purple-700 border-b border-purple-100 pb-2 flex items-center"><span class="bg-purple-100 text-purple-600 w-6 h-6 rounded-full flex items-center justify-center text-sm mr-2">3</span> ผลการทดสอบ (IQC Results)</h3>
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                            <div class="bg-gradient-to-b from-purple-50/50 to-white p-5 rounded-2xl border border-purple-100 shadow-sm transition hover:shadow-md">
-                                <label class="block text-sm font-bold text-purple-800 mb-2 text-center">Level 1 <br><span class="font-normal text-xs text-purple-500">(เกณฑ์ 30-60 mg/dl)</span> <span class="text-pink-500">*</span></label>
-                                <input type="number" id="L1_Result" step="0.1" required class="text-2xl font-bold text-center text-purple-700 placeholder-purple-200" placeholder="0.0" oninput="evaluateStatus()">
-                                <p id="L1-eval" class="text-sm mt-3 text-center h-5"></p>
-                            </div>
-                            <div class="bg-gradient-to-b from-fuchsia-50/50 to-white p-5 rounded-2xl border border-fuchsia-100 shadow-sm transition hover:shadow-md">
-                                <label class="block text-sm font-bold text-fuchsia-800 mb-2 text-center">Level 2 <br><span class="font-normal text-xs text-fuchsia-500">(เกณฑ์ 252-342 mg/dl)</span> <span class="text-pink-500">*</span></label>
-                                <input type="number" id="L2_Result" step="0.1" required class="text-2xl font-bold text-center text-fuchsia-700 placeholder-fuchsia-200" placeholder="0.0" oninput="evaluateStatus()">
-                                <p id="L2-eval" class="text-sm mt-3 text-center h-5"></p>
-                            </div>
-                        </div>
-                        
-                        <div class="mt-8 text-center bg-purple-50 p-6 rounded-2xl border border-purple-100 relative overflow-hidden">
-                            <!-- Background decoration -->
-                            <div class="absolute -top-10 -right-10 text-purple-100 opacity-50"><i class="fas fa-vial text-9xl"></i></div>
-                            
-                            <h4 class="text-sm font-bold text-purple-500 mb-3 relative z-10 uppercase tracking-wider">สรุปผลการประเมินอัตโนมัติ</h4>
-                            <div id="FinalStatusDisplay" class="text-3xl font-bold text-gray-300 relative z-10 transition-colors">รอข้อมูล...</div>
-                            <input type="hidden" id="FinalStatus">
-                            <p class="text-xs text-purple-400 mt-3 relative z-10"><i class="fas fa-info-circle"></i> หากผล "ไม่ผ่าน" ให้นำเครื่องตรวจสอบที่ห้องปฏิบัติการทันที</p>
-                        </div>
-                    </div>
-
-                    <button type="submit" id="btnSubmit" class="w-full bg-gradient-to-r from-purple-500 to-fuchsia-500 hover:from-purple-600 hover:to-fuchsia-600 text-white font-bold py-4 px-4 rounded-2xl shadow-[0_8px_20px_rgba(192,132,252,0.3)] transition-all duration-300 transform hover:-translate-y-0.5 flex justify-center items-center text-lg mt-8">
-                        <i class="fas fa-paper-plane mr-2"></i> บันทึกข้อมูล
-                    </button>
-                </form>
+      <div class="grid two-col">
+        <article class="panel">
+          <div class="panel-title">
+            <h2>จำนวนการตรวจแยกตามหน่วยงาน</h2>
+            <span class="mini" id="deptCaption">7 หน่วยงาน</span>
+          </div>
+          <div class="bars" id="departmentBars"></div>
+        </article>
+        <article class="panel">
+          <div class="panel-title">
+            <h2>ภาพรวมสถานะ IQC</h2>
+            <span class="mini">Quality Control</span>
+          </div>
+          <div class="donut-wrap">
+            <div class="donut" id="passDonut">
+              <div class="donut-center">
+                <div class="donut-big" id="donutPct">100%</div>
+                <div class="mini">ผ่าน</div>
+              </div>
             </div>
+            <div class="legend">
+              <div class="legend-item"><span class="dot ok"></span> ผ่าน <strong id="legendPass">21</strong></div>
+              <div class="legend-item"><span class="dot fail"></span> ไม่ผ่าน <strong id="legendFail">0</strong></div>
+              <div class="legend-item"><span class="dot warn"></span> แบตเตอรี่ต่ำ <strong id="legendBattery">5</strong></div>
+            </div>
+          </div>
+        </article>
+      </div>
+
+      <div class="grid three-col">
+        <article class="panel">
+          <div class="panel-title"><h2>Control Level 1</h2><span class="mini">L1_Result</span></div>
+          <div class="stat-stack">
+            <div class="stat-line"><span>ค่าเฉลี่ย</span><strong id="l1Avg">48.48</strong></div>
+            <div class="stat-line"><span>ต่ำสุด</span><strong id="l1Min">43</strong></div>
+            <div class="stat-line"><span>สูงสุด</span><strong id="l1Max">52</strong></div>
+          </div>
+        </article>
+        <article class="panel">
+          <div class="panel-title"><h2>Control Level 2</h2><span class="mini">L2_Result</span></div>
+          <div class="stat-stack">
+            <div class="stat-line"><span>ค่าเฉลี่ย</span><strong id="l2Avg">308.19</strong></div>
+            <div class="stat-line"><span>ต่ำสุด</span><strong id="l2Min">294</strong></div>
+            <div class="stat-line"><span>สูงสุด</span><strong id="l2Max">330</strong></div>
+          </div>
+        </article>
+        <article class="panel">
+          <div class="panel-title"><h2>การแจ้งเตือน</h2><span class="mini">Operational Risk</span></div>
+          <div class="alert" id="batteryAlert">
+            ตรวจพบ <strong>5 รายการ</strong> ที่ระบุ “แบตเตอรี่ต่ำ” ควรเปลี่ยนแบตเตอรี่และตรวจยืนยันความพร้อมก่อนใช้งานกับผู้ป่วย
+          </div>
+        </article>
+      </div>
+
+      <div class="grid two-col">
+        <article class="panel">
+          <div class="panel-title"><h2>แนวโน้มจำนวนการตรวจตามวันที่</h2><span class="mini">IQC activity</span></div>
+          <div class="bars" id="dateBars"></div>
+        </article>
+        <article class="panel">
+          <div class="panel-title"><h2>ข้อมูลชุด Control</h2><span class="mini">Current dataset</span></div>
+          <div class="stat-stack">
+            <div class="stat-line"><span>Control Lot</span><strong id="controlLot">303887</strong></div>
+            <div class="stat-line"><span>Control Exp.</span><strong id="controlExp">06/04/2027</strong></div>
+            <div class="stat-line"><span>อัปเดตล่าสุด</span><strong id="lastUpdate">31/8/2026, 14:51:19</strong></div>
+          </div>
+        </article>
+      </div>
+    </section>
+
+    <section id="entry" class="view">
+      <article class="panel">
+        <div class="lock-box" id="entryLocked">
+          <div class="lock-icon">Admin</div>
+          <h3>การบันทึกผลต้องเข้าสู่ระบบ</h3>
+          <p class="mini">เข้าสู่ระบบ Admin เพื่อเพิ่มหรือแก้ไขผล IQC</p>
+          <button class="btn btn-dark" onclick="openLogin('entry')">เข้าสู่ระบบ</button>
         </div>
-
-        <!-- ======================= TAB 2: DASHBOARD ======================= -->
-        <div id="tab-dashboard" class="tab-content">
-            <div class="flex flex-col sm:flex-row justify-between items-center mb-8 gap-4">
-                <h2 class="text-2xl font-bold text-purple-800 flex items-center"><i class="fas fa-chart-bar mr-2 text-fuchsia-400"></i> รายงานสรุปผล (Dashboard)</h2>
-                <button onclick="loadDashboardData()" class="bg-white text-purple-600 px-4 py-2 rounded-xl shadow-sm border border-purple-100 hover:bg-purple-50 transition flex items-center text-sm font-medium"><i class="fas fa-sync-alt mr-2 text-purple-400"></i> รีเฟรชข้อมูล</button>
+        <div id="entryContent" style="display:none">
+          <div class="panel-title">
+            <h2 id="entryTitle">บันทึกผล IQC ใหม่</h2>
+            <span class="mini" id="editingId">รายการใหม่</span>
+          </div>
+          <p class="form-note">ช่องที่มีเครื่องหมาย * จำเป็นต้องกรอก ระบบจะสร้าง ID และเวลาบันทึกให้อัตโนมัติ</p>
+          <form id="recordForm" onsubmit="saveRecord(event)">
+            <input type="hidden" id="recordId">
+            <div class="form-grid">
+              <div class="field"><label for="testDate">วันที่ทดสอบ *</label><input class="input" id="testDate" type="date" required></div>
+              <div class="field"><label for="department">หน่วยงาน *</label><input class="input" id="department" list="departmentOptions" maxlength="150" required></div>
+              <div class="field"><label for="tester">ผู้ทดสอบ *</label><div class="autocomplete"><input class="input" id="tester" maxlength="150" placeholder="ค้นหาชื่อ นามสกุล หรือตำแหน่ง" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="personnelSuggestions" autocomplete="off" required onfocus="showPersonnelSuggestions()" oninput="showPersonnelSuggestions()" onkeydown="handlePersonnelKeydown(event)" onblur="handlePersonnelBlur()"><div class="suggestions" id="personnelSuggestions" role="listbox"></div></div></div>
+              <div class="field"><label for="position">ตำแหน่ง *</label><input class="input" id="position" list="positionOptions" maxlength="150" required><datalist id="positionOptions"></datalist></div>
+              <div class="field"><label for="machineId">Machine ID *</label><input class="input" id="machineId" maxlength="100" required></div>
+              <div class="field"><label for="batteryStatus">สถานะแบตเตอรี่ *</label><select class="input" id="batteryStatus" required><option value="แบตเตอรี่ปกติ">แบตเตอรี่ปกติ</option><option value="แบตเตอรี่ต่ำ">แบตเตอรี่ต่ำ</option></select></div>
+              <div class="field"><label for="controlLotInput">Control Lot *</label><input class="input" id="controlLotInput" maxlength="100" required></div>
+              <div class="field"><label for="controlExpInput">Control Exp. *</label><input class="input" id="controlExpInput" type="date" required></div>
+              <div class="field"><label for="l1Result">Control Level 1 *</label><input class="input" id="l1Result" type="number" min="0" step="0.01" required></div>
+              <div class="field"><label for="l2Result">Control Level 2 *</label><input class="input" id="l2Result" type="number" min="0" step="0.01" required></div>
+              <div class="field span-2"><label for="iqcStatus">สถานะ IQC *</label><select class="input" id="iqcStatus" required><option value="ผ่าน">ผ่าน</option><option value="ไม่ผ่าน">ไม่ผ่าน</option></select></div>
             </div>
-
-            <div id="dashboard-loader" class="loader" style="display:none;"></div>
-            
-            <div id="dashboard-content" style="display:none;" class="space-y-6">
-                <!-- KPI Cards -->
-                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5">
-                    <div class="bg-white rounded-2xl shadow-sm p-5 border-l-4 border-purple-400 relative overflow-hidden group hover:shadow-md transition">
-                        <div class="absolute right-[-10px] top-[-10px] opacity-5 text-purple-500 text-6xl group-hover:scale-110 transition-transform"><i class="fas fa-vials"></i></div>
-                        <p class="text-sm text-purple-500 font-semibold mb-1">ทดสอบทั้งหมด</p>
-                        <p class="text-3xl font-bold text-gray-700" id="kpi-total">0</p>
-                        <p class="text-xs text-gray-400 mt-2">รายการ</p>
-                    </div>
-                    <div class="bg-white rounded-2xl shadow-sm p-5 border-l-4 border-emerald-400 relative overflow-hidden group hover:shadow-md transition">
-                        <div class="absolute right-[-10px] top-[-10px] opacity-5 text-emerald-500 text-6xl group-hover:scale-110 transition-transform"><i class="fas fa-check-circle"></i></div>
-                        <p class="text-sm text-emerald-500 font-semibold mb-1">ผ่านเกณฑ์ (Pass)</p>
-                        <p class="text-3xl font-bold text-emerald-600 flex items-baseline gap-2"><span id="kpi-pass-val">0</span> <span class="text-sm font-normal text-gray-400" id="kpi-pass-pct">(0%)</span></p>
-                    </div>
-                    <div class="bg-white rounded-2xl shadow-sm p-5 border-l-4 border-pink-400 relative overflow-hidden group hover:shadow-md transition">
-                        <div class="absolute right-[-10px] top-[-10px] opacity-5 text-pink-500 text-6xl group-hover:scale-110 transition-transform"><i class="fas fa-times-circle"></i></div>
-                        <p class="text-sm text-pink-500 font-semibold mb-1">ไม่ผ่าน (Fail)</p>
-                        <p class="text-3xl font-bold text-pink-500 flex items-baseline gap-2"><span id="kpi-fail-val">0</span> <span class="text-sm font-normal text-gray-400" id="kpi-fail-pct">(0%)</span></p>
-                    </div>
-                    <div class="bg-white rounded-2xl shadow-sm p-5 border-l-4 border-pink-400 relative overflow-hidden group hover:shadow-md transition">
-                        <div class="absolute right-[-10px] top-[-10px] opacity-5 text-pink-500 text-6xl group-hover:scale-110 transition-transform"><i class="fas fa-times-circle"></i></div>
-                        <p class="text-sm text-pink-500 font-semibold mb-1">ไม่ผ่าน (Fail)</p>
-                        <p class="text-3xl font-bold text-pink-500 flex items-baseline gap-2" id="kpi-fail">0 <span class="text-sm font-normal text-gray-400" id="kpi-fail-pct">(0%)</span></p>
-                    </div>
-                    <div class="bg-white rounded-2xl shadow-sm p-5 border-l-4 border-amber-400 relative overflow-hidden group hover:shadow-md transition">
-                        <div class="absolute right-[-10px] top-[-10px] opacity-5 text-amber-500 text-6xl group-hover:scale-110 transition-transform"><i class="fas fa-exclamation-triangle"></i></div>
-                        <p class="text-sm text-amber-500 font-semibold mb-1">ปัญหาอื่นๆ (แบต/หมดอายุ)</p>
-                        <p class="text-3xl font-bold text-amber-500" id="kpi-issue">0</p>
-                    </div>
-                </div>
-
-                <!-- Charts -->
-                <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                    <div class="bg-white p-5 rounded-2xl shadow-sm border border-purple-50 col-span-1">
-                        <h3 class="text-center text-purple-800 font-semibold mb-4 text-sm bg-purple-50 py-2 rounded-lg">สัดส่วนผลการทดสอบ</h3>
-                        <div class="relative h-56 w-full flex justify-center">
-                            <canvas id="chartStatus"></canvas>
-                        </div>
-                    </div>
-                    <div class="bg-white p-5 rounded-2xl shadow-sm border border-purple-50 col-span-1 lg:col-span-2">
-                        <h3 class="text-center text-purple-800 font-semibold mb-4 text-sm bg-purple-50 py-2 rounded-lg">แนวโน้มค่า Level 1 & Level 2 (15 ครั้งล่าสุด)</h3>
-                        <div class="relative h-56 w-full">
-                            <canvas id="chartTrend"></canvas>
-                        </div>
-                    </div>
-                </div>
-                
-                <!-- Issue Table -->
-                <div class="bg-white rounded-2xl shadow-sm overflow-hidden border border-pink-100">
-                    <div class="bg-pink-50/50 px-5 py-4 border-b border-pink-100 flex items-center">
-                        <div class="bg-pink-100 p-2 rounded-lg mr-3 text-pink-500"><i class="fas fa-bell"></i></div>
-                        <h3 class="text-pink-700 font-semibold">รายการที่ต้องดำเนินการ (ไม่ผ่าน / แบตเตอรี่ต่ำ / Strip หมดอายุ)</h3>
-                    </div>
-                    <div class="overflow-x-auto">
-                        <table class="min-w-full text-sm text-left text-gray-500">
-                            <thead class="text-xs text-purple-700 uppercase bg-purple-50/50 border-b border-purple-100">
-                                <tr>
-                                    <th class="px-5 py-4">วันที่</th>
-                                    <th class="px-5 py-4">หน่วยงาน</th>
-                                    <th class="px-5 py-4">เครื่อง</th>
-                                    <th class="px-5 py-4">ปัญหาที่พบ</th>
-                                </tr>
-                            </thead>
-                            <tbody id="issue-table-body" class="divide-y divide-gray-100">
-                                <!-- Data inject via JS -->
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
+            <div class="error" id="recordError"></div>
+            <div class="form-actions">
+              <button class="btn btn-secondary" type="button" onclick="resetRecordForm()">ล้างแบบฟอร์ม</button>
+              <button class="btn btn-dark" id="saveRecordBtn" type="submit">บันทึกผล IQC</button>
             </div>
+          </form>
+          <datalist id="departmentOptions"></datalist>
         </div>
+      </article>
+    </section>
 
-        <!-- ======================= TAB 3: ADMIN/MANAGEMENT ======================= -->
-        <div id="tab-admin" class="tab-content">
-            <!-- Login State -->
-            <div id="admin-login-view" class="max-w-sm mx-auto bg-white rounded-3xl shadow-sm border border-purple-100 p-8 text-center mt-10">
-                <div class="w-20 h-20 bg-purple-50 rounded-full flex items-center justify-center mx-auto mb-6 text-purple-400">
-                    <i class="fas fa-user-shield text-3xl"></i>
-                </div>
-                <h2 class="text-xl font-bold text-purple-800 mb-2">เข้าสู่ระบบจัดการ</h2>
-                <p class="text-sm text-gray-400 mb-6">สำหรับผู้ดูแลระบบเท่านั้น</p>
-                
-                <input type="password" id="adminPassword" placeholder="รหัสผ่าน Admin (ลองใส่ 1234)" class="mb-5 text-center bg-gray-50 border-transparent focus:bg-white text-lg tracking-widest py-3">
-                
-                <button onclick="adminLogin()" class="w-full bg-purple-600 hover:bg-purple-700 text-white font-bold py-3 px-4 rounded-xl shadow-md shadow-purple-500/20 transition duration-200">
-                    เข้าสู่ระบบ
-                </button>
-            </div>
-
-            <!-- Admin Dashboard State -->
-            <div id="admin-data-view" style="display:none;" class="space-y-6">
-                <div class="flex flex-col md:flex-row justify-between items-center bg-white p-4 rounded-2xl shadow-sm border border-purple-50 gap-4">
-                    <h2 class="text-xl font-bold text-purple-800 flex items-center"><i class="fas fa-database mr-2 text-purple-400"></i> จัดการฐานข้อมูล</h2>
-                    <div class="flex w-full md:w-auto gap-3">
-                        <div class="relative w-full md:w-64">
-                            <i class="fas fa-search absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 text-sm"></i>
-                            <input type="text" id="searchInput" placeholder="ค้นหาข้อมูล..." class="w-full pl-9 text-sm bg-gray-50 border-gray-200" onkeyup="filterAdminTable()">
-                        </div>
-                        <button onclick="loadAdminData()" class="bg-purple-50 text-purple-600 px-3 py-2 rounded-xl hover:bg-purple-100 transition" title="รีเฟรช"><i class="fas fa-sync-alt"></i></button>
-                        <button onclick="adminLogout()" class="bg-pink-50 text-pink-600 px-3 py-2 rounded-xl hover:bg-pink-100 transition" title="ออกจากระบบ"><i class="fas fa-sign-out-alt"></i></button>
-                    </div>
-                </div>
-
-                <div id="admin-loader" class="loader" style="display:none;"></div>
-                
-                <div class="bg-white rounded-2xl shadow-sm overflow-hidden border border-purple-100">
-                    <div class="overflow-x-auto h-[600px] overflow-y-auto custom-scrollbar">
-                        <table class="min-w-full text-sm text-left text-gray-500 relative">
-                            <thead class="text-xs text-purple-700 uppercase bg-purple-50 sticky top-0 z-10 shadow-sm border-b border-purple-100">
-                                <tr>
-                                    <th class="px-5 py-4">วันที่</th>
-                                    <th class="px-5 py-4">หน่วยงาน</th>
-                                    <th class="px-5 py-4">เครื่องมือ</th>
-                                    <th class="px-5 py-4 text-center">L1 <span class="text-[10px] font-normal block text-purple-400">30-60</span></th>
-                                    <th class="px-5 py-4 text-center">L2 <span class="text-[10px] font-normal block text-purple-400">252-342</span></th>
-                                    <th class="px-5 py-4 text-center">สถานะ</th>
-                                    <th class="px-5 py-4 text-center">จัดการ</th>
-                                </tr>
-                            </thead>
-                            <tbody id="admin-table-body" class="divide-y divide-gray-100">
-                                <!-- Data inject via JS -->
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-            </div>
+    <section id="testers" class="view">
+      <article class="panel" id="testersPanel">
+        <div class="lock-box" id="testersLocked">
+          <div class="lock-icon">Admin</div>
+          <h3>ข้อมูลรายชื่อเป็นข้อมูลสำหรับผู้ดูแลระบบ</h3>
+          <p class="mini">กรุณาเข้าสู่ระบบก่อนดูรายชื่อผู้ทดสอบและรายละเอียดการปฏิบัติงาน</p>
+          <button class="btn btn-dark" onclick="openLogin('testers')">เข้าสู่ระบบ</button>
         </div>
+        <div id="testersContent" style="display:none">
+          <div class="panel-title"><h2>รายชื่อผู้ทดสอบ</h2><span class="mini" id="testerCount"></span></div>
+          <div class="table-tools">
+            <input class="input search" id="testerSearch" placeholder="ค้นหาชื่อ / ตำแหน่ง / หน่วยงาน..." oninput="renderTesters()">
+            <button class="btn btn-dark" onclick="loadProtectedData()">โหลดข้อมูลใหม่</button>
+          </div>
+          <div class="table-wrap">
+            <table>
+              <thead><tr><th>ผู้ทดสอบ</th><th>ตำแหน่ง</th><th>หน่วยงาน</th><th>จำนวนครั้ง</th><th>จำนวนเครื่อง</th><th>แบตเตอรี่ต่ำ</th><th>วันที่ล่าสุด</th></tr></thead>
+              <tbody id="testerBody"></tbody>
+            </table>
+          </div>
+        </div>
+      </article>
+    </section>
 
-    </main>
+    <section id="records" class="view">
+      <article class="panel">
+        <div class="lock-box" id="recordsLocked">
+          <div class="lock-icon">Admin</div>
+          <h3>ข้อมูลรายละเอียดถูกจำกัดสิทธิ์</h3>
+          <p class="mini">ต้องเข้าสู่ระบบ Admin เพื่อดูข้อมูลรายรายการ</p>
+          <button class="btn btn-dark" onclick="openLogin('records')">เข้าสู่ระบบ</button>
+        </div>
+        <div id="recordsContent" style="display:none">
+          <div class="panel-title"><h2>ข้อมูล IQC ทั้งหมด</h2><span class="mini" id="recordCount"></span></div>
+          <div class="table-tools">
+            <div class="filters">
+              <input class="input search" id="recordSearch" placeholder="ค้นหา ID / หน่วยงาน / ชื่อ / เครื่อง..." oninput="state.recordPage=1;renderRecords()">
+              <select class="input filter-select" id="recordDepartment" onchange="state.recordPage=1;renderRecords()"><option value="">ทุกหน่วยงาน</option></select>
+              <select class="input filter-select" id="recordStatus" onchange="state.recordPage=1;renderRecords()"><option value="">ทุกสถานะ</option><option value="ผ่าน">ผ่าน</option><option value="ไม่ผ่าน">ไม่ผ่าน</option></select>
+            </div>
+            <div class="row-actions">
+              <button class="btn btn-secondary" onclick="exportCsv()">ส่งออก CSV</button>
+              <button class="btn btn-secondary" onclick="document.getElementById('csvImport').click()">นำเข้า CSV</button>
+              <button class="btn btn-dark" onclick="startNewRecord()">เพิ่มรายการ</button>
+              <button class="btn btn-dark" onclick="loadProtectedData()">โหลดข้อมูลใหม่</button>
+              <input class="hidden-input" id="csvImport" type="file" accept=".csv,text/csv" onchange="importCsv(event)">
+            </div>
+          </div>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr><th>ID</th><th>วันเวลา</th><th>หน่วยงาน</th><th>ผู้ทดสอบ</th><th>ตำแหน่ง</th><th>Machine ID</th><th>Battery</th><th>Control Lot</th><th>Exp.</th><th>L1</th><th>L2</th><th>Status</th><th>จัดการ</th></tr>
+              </thead>
+              <tbody id="recordBody"></tbody>
+            </table>
+          </div>
+          <div class="pagination">
+            <select class="input filter-select" id="recordPageSize" onchange="state.recordPage=1;renderRecords()"><option value="25">25 แถว</option><option value="50" selected>50 แถว</option><option value="100">100 แถว</option></select>
+            <button class="btn btn-secondary btn-small" id="recordPrev" onclick="changeRecordPage(-1)">ก่อนหน้า</button>
+            <span class="mini" id="recordPageInfo"></span>
+            <button class="btn btn-secondary btn-small" id="recordNext" onclick="changeRecordPage(1)">ถัดไป</button>
+          </div>
+        </div>
+      </article>
+    </section>
+
+    <section id="audit" class="view">
+      <article class="panel">
+        <div class="lock-box" id="auditLocked">
+          <div class="lock-icon">Admin</div>
+          <h3>ประวัติการเปลี่ยนแปลงสำหรับผู้ดูแลระบบ</h3>
+          <p class="mini">ตรวจสอบการเพิ่ม แก้ไข ลบ และนำเข้าข้อมูล</p>
+          <button class="btn btn-dark" onclick="openLogin('audit')">เข้าสู่ระบบ</button>
+        </div>
+        <div id="auditContent" style="display:none">
+          <div class="panel-title"><h2>ประวัติการเปลี่ยนแปลง</h2><span class="mini" id="auditCount"></span></div>
+          <div class="table-tools">
+            <input class="input search" id="auditSearch" placeholder="ค้นหาเวลา ผู้ใช้ การกระทำ หรือ ID..." oninput="renderAudit()">
+            <button class="btn btn-dark" onclick="loadAuditData()">โหลดประวัติใหม่</button>
+          </div>
+          <div class="table-wrap">
+            <table>
+              <thead><tr><th>วันเวลา</th><th>ผู้ใช้</th><th>การกระทำ</th><th>Record ID</th><th>ข้อมูลก่อนหน้า</th><th>ข้อมูลหลังเปลี่ยน</th></tr></thead>
+              <tbody id="auditBody"></tbody>
+            </table>
+          </div>
+        </div>
+      </article>
+    </section>
+  </main>
+
+  <div class="footer">IQC Monitoring System · ออกแบบสำหรับ Google Sheets + Google Apps Script</div>
 </div>
 
+<div class="modal" id="loginModal" onclick="if(event.target===this)closeLogin()">
+  <div class="modal-card">
+    <div class="modal-top"><h2>Admin Login</h2><button class="x" aria-label="ปิด" onclick="closeLogin()">×</button></div>
+    <div class="field"><label>Username</label><input class="input" id="username" autocomplete="username" value="admin"></div>
+    <div class="field"><label>Password</label><input class="input" id="password" type="password" autocomplete="current-password" placeholder="รหัสผ่าน"></div>
+    <div class="error" id="loginError"></div>
+    <p class="connection-note" id="loginModeNote"></p>
+    <div class="login-actions">
+      <button class="btn btn-dark" id="loginBtn" onclick="login()">เข้าสู่ระบบ</button>
+      <button class="btn btn-secondary" onclick="closeLogin()">ยกเลิก</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal" id="settingsModal" onclick="if(event.target===this)closeSettings()">
+  <div class="modal-card">
+    <div class="modal-top"><h2>ตั้งค่าการเชื่อมต่อ</h2><button class="x" aria-label="ปิด" onclick="closeSettings()">×</button></div>
+    <div class="field">
+      <label for="gasUrlInput">Google Apps Script Web App URL</label>
+      <input class="input" id="gasUrlInput" type="url" placeholder="https://script.google.com/macros/s/.../exec">
+    </div>
+    <p class="connection-note">เว้นว่างเพื่อใช้งานและเก็บข้อมูลเฉพาะในเบราว์เซอร์เครื่องนี้ ใส่ URL เมื่ออยากใช้ Google Sheet ร่วมกันหลายเครื่อง</p>
+    <div class="error" id="settingsError"></div>
+    <div class="login-actions">
+      <button class="btn btn-dark" onclick="saveSettings()">บันทึกการตั้งค่า</button>
+      <button class="btn btn-secondary" onclick="closeSettings()">ยกเลิก</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
 <script>
-    /* ==========================================
-       ตั้งค่า URL Web App จาก Google Apps Script
-       ========================================== */
-    const GAS_API_URL = 'https://script.google.com/macros/s/AKfycbwD3HllVCCKCIGOUXiuw9Z1jIv-a0OOs8t-UzQ3c7jk7aVGoErNU1pYjYu_qFO0DhQr/exec';
-    
-    // สถานะ
-    let globalData = [];
-    let isAdminLoggedIn = false;
-    let currentAdminPass = '';
-    let charts = {};
+  const HEADERS = [
+    'ID','Timestamp','TestDate','Department','Tester','Position','MachineID',
+    'BatteryStatus','ControlLot','ControlExp','L1_Result','L2_Result','Status'
+  ];
+  const LOCAL_DATA_KEY = 'iqc_records_v2';
+  const LOCAL_AUDIT_KEY = 'iqc_audit_v1';
+  const GAS_URL_KEY = 'iqc_gas_url';
+  const TOKEN_KEY = 'iqc_admin_token';
+  const TOKEN_MODE_KEY = 'iqc_token_mode';
+  const DEFAULT_GAS_URL = 'https://script.google.com/macros/s/AKfycbypAdktWX_DnooPBq_NDNv753uOTj1EmZFiaAj2bIykFcE8c-Mf85GZwne8x73p0o0o/exec';
+  const LEGACY_GAS_URLS = ['https://script.google.com/macros/s/AKfycbxFEEtfZhEc5FZSUe8bO73wbC0_lZByZY7E-ykNtc2Gn9rGDc-FzHnKHcI7uPrpfCmN/exec'];
+  const TEMPLATE_GAS_URL = '<?= appUrl ?>';
+  const LOCAL_ADMIN = { username:'admin', password:'1234' };
 
-    // ตั้งค่าเริ่มต้น
-    document.addEventListener('DOMContentLoaded', () => {
-        // Set Today date in form
-        const today = new Date().toISOString().split('T')[0];
-        document.getElementById('TestDate').value = today;
-        
-        // Date formatting for header
-        const options = { year: 'numeric', month: 'long', day: 'numeric' };
-        document.getElementById('current-date-badge').innerText = new Date().toLocaleDateString('th-TH', options);
+  const BOOTSTRAP_ROWS = [
+    ['IQC-1787803258218-643','27/8/2026, 11:00:58','27/08/2026','ห้องปฏิบัติการ','นิตยา คำอู','นักเทคนิคการแพทย์','Lab','แบตเตอรี่ปกติ','303887','06/04/2027',49,301,'ผ่าน'],
+    ['IQC-1787803407142-263','27/8/2026, 11:03:27','27/08/2026','ห้องปฏิบัติการ','นิตยา คำอู','นักเทคนิคการแพทย์','Lab 2','แบตเตอรี่ปกติ','303887','06/04/2027',49,306,'ผ่าน'],
+    ['IQC-1787815961545-630','27/8/2026, 14:32:42','27/08/2026','ผู้ป่วยในชาย','ถานะมาศ ศรีไสว','พยาบาลวิชาชีพ','Ipdชาย1','แบตเตอรี่ปกติ','303887','06/04/2027',47,304,'ผ่าน'],
+    ['IQC-1787816130197-152','27/8/2026, 14:35:30','27/08/2026','ผู้ป่วยในชาย','ถานะมาศ ศรีไสว','พยาบาลวิชาชีพ','Ipdชาย2','แบตเตอรี่ต่ำ','303887','06/04/2027',46,305,'ผ่าน'],
+    ['IQC-1787816565441-357','27/8/2026, 14:42:45','27/08/2026','ผู้ป่วยในหญิง','ละออง สุขตะกั่ว','พยาบาลวิชาชีพ','IPDหญิง1','แบตเตอรี่ปกติ','303887','06/04/2027',46,298,'ผ่าน'],
+    ['IQC-1787816845953-121','27/8/2026, 14:47:26','27/08/2026','ผู้ป่วยในหญิง','ละออง สุขตะกั่ว','พยาบาลวิชาชีพ','IPDหญิง2','แบตเตอรี่ต่ำ','303887','06/04/2027',47,314,'ผ่าน'],
+    ['IQC-1788150301913-897','31/8/2026, 11:25:02','31/08/2026','ห้องปฏิบัติการ','นิตยา คำอู','นักเทคนิคการแพทย์','Lab 1','แบตเตอรี่ปกติ','303887','06/04/2027',50,307,'ผ่าน'],
+    ['IQC-1788150404401-159','31/8/2026, 11:26:44','31/08/2026','ห้องปฏิบัติการ','นิตยา','นักเทคนิคการแพทย์','Lab','แบตเตอรี่ปกติ','303887','06/04/2027',51,306,'ผ่าน'],
+    ['IQC-1788157544911-703','31/8/2026, 13:25:45','31/08/2026','อุบัติเหตุฉุกเฉิน','กมลชนก จึงเจริญโชค','พนักงานช่วยเหลือคนไข้','ER3','แบตเตอรี่ปกติ','303887','06/04/2027',50,307,'ผ่าน'],
+    ['IQC-1788157655836-15','31/8/2026, 13:27:36','31/08/2026','อุบัติเหตุฉุกเฉิน','กมลชนก จึงเจริญโชค','พนักงานช่วยเหลือคนไข้','Er4','แบตเตอรี่ปกติ','303887','06/04/2027',48,306,'ผ่าน'],
+    ['IQC-1788157910516-162','31/8/2026, 13:31:51','31/08/2026','อุบัติเหตุฉุกเฉิน','ชลธิชา ยอดสำโรง','พยาบาลวิชาชีพ','ER8','แบตเตอรี่ปกติ','303887','06/04/2027',51,315,'ผ่าน'],
+    ['IQC-1788158192968-255','31/8/2026, 13:36:33','31/08/2026','อุบัติเหตุฉุกเฉิน','กมลชนก จึงเจริญโชค','พนักงานช่วยเหลือคนไข้','ER10','แบตเตอรี่ปกติ','303887','06/04/2027',50,330,'ผ่าน'],
+    ['IQC-1788158524964-195','31/8/2026, 13:42:05','31/08/2026','อุบัติเหตุฉุกเฉิน','กมลชนก จึงเจริญโชค','พนักงานช่วยเหลือคนไข้','ER7','แบตเตอรี่ปกติ','303887','06/04/2027',52,326,'ผ่าน'],
+    ['IQC-1788159062885-603','31/8/2026, 13:51:03','31/08/2026','คลินิกเฉพาะโรค','เพลินพิศ สร้างนอก','พนักงานช่วยเหลือคนไข้','คลินิก2','แบตเตอรี่ปกติ','303887','06/04/2027',46,305,'ผ่าน'],
+    ['IQC-1788159093351-450','31/8/2026, 13:51:33','31/08/2026','คลินิกเฉพาะโรค','เพลินพิศ สร้างนอก','พนักงานช่วยเหลือคนไข้','Lab3','แบตเตอรี่ปกติ','303887','06/04/2027',47,305,'ผ่าน'],
+    ['IQC-1788159238486-88','31/8/2026, 13:53:58','31/08/2026','คลินิกเฉพาะโรค','เพลินพิศ สร้างนอก','พนักงานช่วยเหลือคนไข้','LabDM','แบตเตอรี่ต่ำ','303887','06/04/2027',47,307,'ผ่าน'],
+    ['IQC-1788160314091-385','31/8/2026, 14:11:54','31/08/2026','ANC','สุดารัตน์  ศรีนอก','พนักงานช่วยเหลือคนไข้','LR','แบตเตอรี่ปกติ','303887','06/04/2027',49,305,'ผ่าน'],
+    ['IQC-1788161386212-950','31/8/2026, 14:29:46','31/08/2026','ผู้ป่วยในชาย','วลัยพร','พยาบาลวิชาชีพ','IPDช2','แบตเตอรี่ปกติ','303887','06/04/2027',51,317,'ผ่าน'],
+    ['IQC-1788161531492-549','31/8/2026, 14:32:11','31/08/2026','ผู้ป่วยในชาย','วลัยพร','พยาบาลวิชาชีพ','IPDช1','แบตเตอรี่ปกติ','303887','06/04/2027',51,317,'ผ่าน'],
+    ['IQC-1788162277681-192','31/8/2026, 14:44:38','31/08/2026','ผู้ป่วยนอก','รัศมี วันดี','พยาบาลวิชาชีพ','OPD','แบตเตอรี่ต่ำ','303887','06/04/2027',48,297,'ผ่าน'],
+    ['IQC-1788162678718-857','31/8/2026, 14:51:19','31/08/2026','ANC','สุดารัตน์','พนักงานช่วยเหลือคนไข้','ANC','แบตเตอรี่ต่ำ','303887','06/04/2027',43,294,'ผ่าน']
+  ];
+  const SEED_RECORDS = BOOTSTRAP_ROWS.map(row => Object.fromEntries(HEADERS.map((header,index)=>[header,row[index]])));
+
+  const state = {
+    summary:null,
+    token:sessionStorage.getItem(TOKEN_KEY)||'',
+    testers:[],
+    records:[],
+    audit:[],
+    personnel:[],
+    positions:[],
+    personnelMatches:[],
+    personnelHighlight:-1,
+    recordPage:1,
+    remoteCapabilities:null,
+    pendingView:''
+  };
+
+  function esc(value){
+    return String(value??'').replace(/[&<>"']/g,char=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[char]));
+  }
+
+  function showToast(message){
+    const toast=document.getElementById('toast');
+    toast.textContent=message;
+    toast.classList.add('show');
+    clearTimeout(showToast.timer);
+    showToast.timer=setTimeout(()=>toast.classList.remove('show'),3200);
+  }
+
+  function hasNativeRpc(){
+    return Boolean(window.google&&google.script&&google.script.run&&TEMPLATE_GAS_URL&&!TEMPLATE_GAS_URL.includes('<?'));
+  }
+
+  function getGasUrl(){
+    const saved=localStorage.getItem(GAS_URL_KEY);
+    if(saved!==null){
+      const url=saved.trim();
+      if(LEGACY_GAS_URLS.includes(url)){
+        localStorage.setItem(GAS_URL_KEY,DEFAULT_GAS_URL);
+        return DEFAULT_GAS_URL;
+      }
+      return url;
+    }
+    if(!TEMPLATE_GAS_URL.includes('<?'))return TEMPLATE_GAS_URL.trim();
+    return DEFAULT_GAS_URL;
+  }
+
+  function isConfiguredUrl(url=getGasUrl()){
+    return /^https:\/\/script\.google\.com\/macros\/s\/[A-Za-z0-9_-]+\/exec(?:[?#].*)?$/.test(url);
+  }
+
+  function isLocalMode(){return !hasNativeRpc()&&!isConfiguredUrl()}
+  function modeKey(){return isLocalMode()?'local':(hasNativeRpc()?'gas-native':getGasUrl())}
+
+  function jsonp(params,timeout=20000){
+    return new Promise((resolve,reject)=>{
+      const url=getGasUrl();
+      if(!isConfiguredUrl(url)) return reject(new Error('URL ของ Google Apps Script ไม่ถูกต้อง'));
+      const callback='iqc_cb_'+Date.now()+'_'+Math.random().toString(36).slice(2);
+      const script=document.createElement('script');
+      let settled=false;
+      const cleanup=(error,data)=>{
+        if(settled)return;
+        settled=true;
+        clearTimeout(timer);
+        try{delete window[callback]}catch(e){}
+        script.remove();
+        error?reject(error):resolve(data);
+      };
+      const timer=setTimeout(()=>cleanup(new Error('การเชื่อมต่อ Google Apps Script ใช้เวลานานเกินกำหนด')),timeout);
+      window[callback]=data=>cleanup(null,data);
+      const query=new URLSearchParams({...params,callback,_:Date.now()});
+      script.src=url+(url.includes('?')?'&':'?')+query.toString();
+      script.onerror=()=>cleanup(new Error('เชื่อมต่อ Google Apps Script ไม่สำเร็จ'));
+      document.head.appendChild(script);
     });
+  }
 
-    // เปลี่ยน Tab แบบ Smooth
-    function switchTab(tabId) {
-        document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
-        document.getElementById('tab-' + tabId).classList.add('active');
-        
-        // Update styling navbar
-        const buttons = ['form', 'dashboard', 'admin'];
-        buttons.forEach(btn => {
-            const el = document.getElementById('btn-tab-' + btn);
-            if(btn === tabId) {
-                el.classList.add('bg-white/20', 'backdrop-blur-md', 'shadow-sm');
-                el.classList.remove('hover:bg-white/20');
-            } else {
-                el.classList.remove('bg-white/20', 'backdrop-blur-md', 'shadow-sm');
-                el.classList.add('hover:bg-white/20');
-            }
-        });
-
-        if (tabId === 'dashboard') loadDashboardData();
-        if (tabId === 'admin' && isAdminLoggedIn) loadAdminData();
+  function api(params){
+    if(hasNativeRpc()){
+      return new Promise((resolve,reject)=>{
+        google.script.run
+          .withSuccessHandler(resolve)
+          .withFailureHandler(error=>reject(new Error(error&&error.message?error.message:String(error))))
+          .callApi(params);
+      });
     }
+    return jsonp(params);
+  }
 
-    // จัดการ Select "อื่นๆ"
-    function checkOtherSelect(selectEl, containerId, inputId) {
-        const container = document.getElementById(containerId);
-        const input = document.getElementById(inputId);
-        if (selectEl.value === 'Other') {
-            container.classList.remove('hidden');
-            input.required = true;
-            input.focus();
-        } else {
-            container.classList.add('hidden');
-            input.required = false;
-        }
+  async function sha256(text){
+    if(!window.crypto||!crypto.subtle) throw new Error('เบราว์เซอร์นี้ไม่รองรับการเข้าสู่ระบบแบบปลอดภัย');
+    const digest=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(text));
+    return [...new Uint8Array(digest)].map(byte=>byte.toString(16).padStart(2,'0')).join('');
+  }
+
+  function readLocalRecords(){
+    const raw=localStorage.getItem(LOCAL_DATA_KEY);
+    if(!raw){
+      localStorage.setItem(LOCAL_DATA_KEY,JSON.stringify(SEED_RECORDS));
+      return SEED_RECORDS.map(record=>({...record}));
     }
-
-    // แจ้งเตือนวันหมดอายุ
-    function checkExpiry(dateStr) {
-        if(!dateStr) return;
-        const expiryDate = new Date(dateStr);
-        const today = new Date();
-        today.setHours(0,0,0,0);
-        
-        const warning = document.getElementById('expiry-warning');
-        if (expiryDate < today) {
-            warning.classList.remove('hidden');
-            Swal.fire({
-                icon: 'warning',
-                title: 'คำเตือน!',
-                text: 'Strip Lot นี้หมดอายุแล้ว โปรดตรวจสอบก่อนใช้งาน',
-                confirmButtonColor: '#c084fc',
-                background: '#fff0f2'
-            });
-        } else {
-            warning.classList.add('hidden');
-        }
+    try{
+      const parsed=JSON.parse(raw);
+      if(!Array.isArray(parsed)) throw new Error('invalid');
+      return parsed;
+    }catch(error){
+      throw new Error('ข้อมูลในเครื่องเสียหาย กรุณาส่งออกสำรองหรือเคลียร์ข้อมูลเว็บไซต์ก่อนใช้งานต่อ');
     }
+  }
 
-    // ประเมินผลอัตโนมัติ (Validation)
-    function evaluateStatus() {
-        const l1 = parseFloat(document.getElementById('L1_Result').value);
-        const l2 = parseFloat(document.getElementById('L2_Result').value);
-        
-        const l1Eval = document.getElementById('L1-eval');
-        const l2Eval = document.getElementById('L2-eval');
-        const finalDisp = document.getElementById('FinalStatusDisplay');
-        const finalInput = document.getElementById('FinalStatus');
+  function writeLocalRecords(records){
+    localStorage.setItem(LOCAL_DATA_KEY,JSON.stringify(records));
+  }
 
-        let isL1Pass = null;
-        let isL2Pass = null;
+  function readLocalAudit(){
+    const raw=localStorage.getItem(LOCAL_AUDIT_KEY);
+    if(!raw)return [];
+    try{
+      const parsed=JSON.parse(raw);
+      return Array.isArray(parsed)?parsed:[];
+    }catch(error){return []}
+  }
 
-        // Check L1 (30-60)
-        if (!isNaN(l1)) {
-            if (l1 >= 30 && l1 <= 60) {
-                l1Eval.innerHTML = '<span class="text-emerald-500 font-semibold bg-emerald-50 px-2 py-1 rounded text-xs"><i class="fas fa-check"></i> ผ่านเกณฑ์</span>';
-                isL1Pass = true;
-            } else {
-                l1Eval.innerHTML = '<span class="text-pink-500 font-semibold bg-pink-50 px-2 py-1 rounded text-xs"><i class="fas fa-times"></i> ไม่ผ่านเกณฑ์</span>';
-                isL1Pass = false;
-            }
-        } else { l1Eval.innerHTML = ''; }
-
-        // Check L2 (252-342)
-        if (!isNaN(l2)) {
-            if (l2 >= 252 && l2 <= 342) {
-                l2Eval.innerHTML = '<span class="text-emerald-500 font-semibold bg-emerald-50 px-2 py-1 rounded text-xs"><i class="fas fa-check"></i> ผ่านเกณฑ์</span>';
-                isL2Pass = true;
-            } else {
-                l2Eval.innerHTML = '<span class="text-pink-500 font-semibold bg-pink-50 px-2 py-1 rounded text-xs"><i class="fas fa-times"></i> ไม่ผ่านเกณฑ์</span>';
-                isL2Pass = false;
-            }
-        } else { l2Eval.innerHTML = ''; }
-
-        // Final
-        if (isL1Pass !== null && isL2Pass !== null) {
-            if (isL1Pass && isL2Pass) {
-                finalDisp.innerHTML = '<span class="text-emerald-500 drop-shadow-sm"><i class="fas fa-check-circle"></i> ผ่าน (Pass)</span>';
-                finalInput.value = 'ผ่าน';
-            } else {
-                finalDisp.innerHTML = '<span class="text-pink-500 drop-shadow-sm"><i class="fas fa-times-circle"></i> ไม่ผ่าน (Fail)</span>';
-                finalInput.value = 'ไม่ผ่าน';
-            }
-        } else {
-            finalDisp.innerHTML = '<span class="text-purple-200">รอข้อมูล...</span>';
-            finalInput.value = '';
-        }
-    }
-
-    // ส่งฟอร์ม
-    document.getElementById('iqcForm').addEventListener('submit', async function(e) {
-        e.preventDefault();
-        
-        let dept = document.getElementById('Department').value;
-        if(dept === 'Other') dept = document.getElementById('DeptOther').value;
-        
-        let pos = document.getElementById('Position').value;
-        if(pos === 'Other') pos = document.getElementById('PosOther').value;
-        
-        const finalStatus = document.getElementById('FinalStatus').value;
-        if(!finalStatus) {
-            Swal.fire({icon: 'warning', title: 'ข้อมูลไม่ครบ', text: 'กรุณากรอกผล L1 และ L2', confirmButtonColor: '#c084fc'});
-            return;
-        }
-
-        const payload = {
-            TestDate: formatISOtoDateString(document.getElementById('TestDate').value),
-            Department: dept,
-            TesterName: document.getElementById('TesterName').value,
-            Position: pos,
-            DeviceName: document.getElementById('DeviceName').value,
-            BatteryStatus: document.querySelector('input[name="BatteryStatus"]:checked').value,
-            StripLot: document.getElementById('StripLot').value,
-            StripExpiry: formatISOtoDateString(document.getElementById('StripExpiry').value),
-            L1_Result: parseFloat(document.getElementById('L1_Result').value),
-            L2_Result: parseFloat(document.getElementById('L2_Result').value),
-            FinalStatus: finalStatus
-        };
-
-        if(payload.FinalStatus === 'ไม่ผ่าน' || payload.BatteryStatus === 'แบตเตอรี่ต่ำ') {
-            const confirm = await Swal.fire({
-                title: 'คำเตือนผลการประเมิน',
-                text: "พบผล 'ไม่ผ่าน' หรือ 'แบตต่ำ' ยืนยันการบันทึกใช่หรือไม่?",
-                icon: 'warning',
-                showCancelButton: true,
-                confirmButtonColor: '#f472b6',
-                cancelButtonColor: '#9ca3af',
-                confirmButtonText: 'บันทึก',
-                cancelButtonText: 'ยกเลิก'
-            });
-            if(!confirm.isConfirmed) return;
-        }
-
-        const btn = document.getElementById('btnSubmit');
-        const origText = btn.innerHTML;
-        btn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i> กำลังบันทึก...';
-        btn.disabled = true;
-
-        try {
-            // ==========================================
-            // DEMO MODE: ทำงานเมื่อยังไม่ใส่ URL API จริง
-            // ==========================================
-            if(GAS_API_URL.includes('YOUR_SCRIPT_ID')) {
-                payload.RecordID = 'DEMO-NEW-' + Date.now();
-                if(globalData.length === 0) globalData = generateMockData();
-                globalData.unshift(payload); // แทรกไว้บนสุด
-                
-                setTimeout(() => { // จำลองเวลาโหลด
-                    Swal.fire({
-                        icon: 'success',
-                        title: 'บันทึกสำเร็จ (Demo Mode)',
-                        text: 'ข้อมูลจำลองถูกบันทึกลงระบบชั่วคราวแล้ว (หากต้องการบันทึกจริงต้องนำ URL จาก Google Apps Script มาใส่ในโค้ด)',
-                        confirmButtonColor: '#c084fc'
-                    });
-                    document.getElementById('iqcForm').reset();
-                    document.getElementById('TestDate').value = new Date().toISOString().split('T')[0];
-                    evaluateStatus();
-                    btn.innerHTML = origText;
-                    btn.disabled = false;
-                }, 800);
-                return;
-            }
-            // ==========================================
-
-            // ระบบจริง
-            const response = await fetch(GAS_API_URL, {
-                method: 'POST',
-                body: JSON.stringify({ action: 'saveData', payload: payload })
-            });
-            const result = await response.json();
-            
-            if (result.status === 'success') {
-                Swal.fire({icon: 'success', title: 'สำเร็จ!', text: 'บันทึกข้อมูลเรียบร้อย', confirmButtonColor: '#c084fc'});
-                document.getElementById('iqcForm').reset();
-                document.getElementById('TestDate').value = new Date().toISOString().split('T')[0];
-                evaluateStatus();
-            } else {
-                throw new Error(result.message);
-            }
-        } catch (error) {
-            Swal.fire({icon: 'error', title: 'เกิดข้อผิดพลาด', text: error.message, confirmButtonColor: '#f472b6'});
-        } finally {
-            btn.innerHTML = origText;
-            btn.disabled = false;
-        }
+  function appendLocalAudit(action,recordId,before,after){
+    const rows=readLocalAudit();
+    rows.push({
+      Timestamp:localTimestamp(),User:'admin',Action:action,RecordID:String(recordId||''),
+      BeforeJSON:before?JSON.stringify(before):'',AfterJSON:after?JSON.stringify(after):''
     });
+    localStorage.setItem(LOCAL_AUDIT_KEY,JSON.stringify(rows.slice(-1000)));
+    state.audit=[];
+  }
 
-    // แปลงวันที่ ISO -> DD/MM/YYYY
-    function formatISOtoDateString(isoStr) {
-        if(!isoStr) return "";
-        const parts = isoStr.split('-');
-        return `${parts[2]}/${parts[1]}/${parts[0]}`;
+  function normalizePersonnelDirectory(rows,extraPositions=[]){
+    const names=new Map();
+    (Array.isArray(rows)?rows:[]).forEach(row=>{
+      const fullName=Array.isArray(row)
+        ?clean(`${row[0]||''} ${row[1]||''}`).replace(/\s+/g,' ')
+        :clean(row.fullName||`${row.firstName||''} ${row.lastName||''}`).replace(/\s+/g,' ');
+      const position=clean(Array.isArray(row)?row[2]:row.position).replace(/\s+/g,' ');
+      const key=fullName.toLowerCase();
+      if(fullName&&!names.has(key))names.set(key,{fullName,position});
+    });
+    const people=[...names.values()].sort((a,b)=>a.fullName.localeCompare(b.fullName,'th'));
+    const positions=unique([...people.map(person=>person.position),...(Array.isArray(extraPositions)?extraPositions:[])]).sort((a,b)=>a.localeCompare(b,'th'));
+    return {people,positions};
+  }
+
+  function applyPersonnelDirectory(rows,positions=[]){
+    const directory=normalizePersonnelDirectory(rows,positions);
+    state.personnel=directory.people;
+    state.positions=directory.positions;
+    renderPersonnelDirectory();
+  }
+
+  async function loadPersonnelSource(){
+    if(hasNativeRpc()||window.IQC_PERSONNEL_DATA)return;
+    await new Promise(resolveLoad=>{
+      const script=document.createElement('script');
+      script.src='personnel-data.js';
+      script.onload=resolveLoad;
+      script.onerror=resolveLoad;
+      document.head.appendChild(script);
+    });
+  }
+
+  function renderPersonnelDirectory(){
+    document.getElementById('positionOptions').innerHTML=state.positions.map(position=>`<option value="${esc(position)}"></option>`).join('');
+  }
+
+  function personnelSearchText(person){
+    return `${person.fullName} ${person.position}`.toLowerCase().replace(/\s+/g,' ');
+  }
+
+  function renderPersonnelSuggestions(){
+    const container=document.getElementById('personnelSuggestions');
+    if(!state.personnelMatches.length){
+      container.innerHTML='<div class="suggestion-empty">ไม่พบรายชื่อที่ตรงกัน</div>';
+    }else{
+      container.innerHTML=state.personnelMatches.map((person,index)=>`<button type="button" class="suggestion ${index===state.personnelHighlight?'active':''}" role="option" aria-selected="${index===state.personnelHighlight}" data-person-index="${state.personnel.indexOf(person)}" onmousedown="event.preventDefault()" onclick="selectPersonnel(Number(this.dataset.personIndex))"><strong>${esc(person.fullName)}</strong><span>${esc(person.position||'-')}</span></button>`).join('');
     }
+    container.classList.add('show');
+    document.getElementById('tester').setAttribute('aria-expanded','true');
+    const active=container.querySelector('.suggestion.active');
+    if(active)active.scrollIntoView({block:'nearest'});
+  }
 
-    // ฟังก์ชันสร้างข้อมูลจำลอง (Mock Data) สวยๆ สำหรับ Demo
-    function generateMockData() {
-        const mock = [];
-        const depts = ['อุบัติเหตุฉุกเฉิน', 'ผู้ป่วยนอก', 'ผู้ป่วยในชาย', 'ผู้ป่วยในหญิง', 'ห้องปฏิบัติการ', 'ANC'];
-        const devices = ['ACCU-01', 'ACCU-02', 'ACCU-03', 'ACCU-04'];
-        const today = new Date();
-        
-        for(let i=0; i<30; i++) {
-            let d = new Date(today);
-            d.setDate(d.getDate() - (i*2)); // ย้อนหลังวันละนิดหน่อย
-            let dateStr = `${String(d.getDate()).padStart(2, '0')}/${String(d.getMonth()+1).padStart(2, '0')}/${d.getFullYear()}`;
-            
-            let isBad = Math.random() > 0.85; // 15% chance of failing
-            let l1 = isBad ? (Math.random() * (29 - 25) + 25).toFixed(1) : (Math.random() * (55 - 35) + 35).toFixed(1);
-            let l2 = isBad ? (Math.random() * (355 - 345) + 345).toFixed(1) : (Math.random() * (330 - 260) + 260).toFixed(1);
-            
-            let isL1Pass = l1 >= 30 && l1 <= 60;
-            let isL2Pass = l2 >= 252 && l2 <= 342;
-            let finalStat = (isL1Pass && isL2Pass) ? 'ผ่าน' : 'ไม่ผ่าน';
-            
-            mock.push({
-                RecordID: 'DEMO-' + i,
-                TestDate: dateStr,
-                Department: depts[Math.floor(Math.random()*depts.length)],
-                TesterName: 'พยาบาล ' + (Math.floor(Math.random()*5)+1),
-                Position: 'พยาบาลวิชาชีพ',
-                DeviceName: devices[Math.floor(Math.random()*devices.length)],
-                BatteryStatus: Math.random() > 0.95 ? 'แบตเตอรี่ต่ำ' : 'แบตเตอรี่ปกติ',
-                StripLot: 'LOT-' + (8900 - i),
-                StripExpiry: '31/12/2026',
-                L1_Result: parseFloat(l1),
-                L2_Result: parseFloat(l2),
-                FinalStatus: finalStat
-            });
-        }
-        return mock;
+  function showPersonnelSuggestions(){
+    const query=clean(document.getElementById('tester').value).toLowerCase().replace(/\s+/g,' ');
+    const source=state.personnel.length?state.personnel:state.records.map(record=>({fullName:clean(record.Tester),position:clean(record.Position)}));
+    state.personnelMatches=source.filter(person=>!query||personnelSearchText(person).includes(query));
+    state.personnelHighlight=-1;
+    renderPersonnelSuggestions();
+  }
+
+  function closePersonnelSuggestions(){
+    document.getElementById('personnelSuggestions').classList.remove('show');
+    document.getElementById('tester').setAttribute('aria-expanded','false');
+    state.personnelHighlight=-1;
+  }
+
+  function selectPersonnel(index){
+    const person=state.personnel[index];
+    if(!person)return;
+    document.getElementById('tester').value=person.fullName;
+    document.getElementById('position').value=person.position;
+    closePersonnelSuggestions();
+  }
+
+  function matchPersonnelInput(){
+    const value=clean(document.getElementById('tester').value).toLowerCase().replace(/\s+/g,' ');
+    const person=state.personnel.find(item=>item.fullName.toLowerCase().replace(/\s+/g,' ')===value);
+    if(person)document.getElementById('position').value=person.position;
+  }
+
+  function handlePersonnelBlur(){
+    matchPersonnelInput();
+    setTimeout(closePersonnelSuggestions,120);
+  }
+
+  function handlePersonnelKeydown(event){
+    if(event.key==='Escape'){closePersonnelSuggestions();return}
+    if(!['ArrowDown','ArrowUp','Enter'].includes(event.key))return;
+    if(!document.getElementById('personnelSuggestions').classList.contains('show'))showPersonnelSuggestions();
+    if(event.key==='Enter'){
+      if(state.personnelHighlight>=0&&state.personnelMatches[state.personnelHighlight]){
+        event.preventDefault();
+        const person=state.personnelMatches[state.personnelHighlight];
+        selectPersonnel(state.personnel.indexOf(person));
+      }
+      return;
     }
+    event.preventDefault();
+    const limit=state.personnelMatches.length;
+    if(!limit)return;
+    state.personnelHighlight=event.key==='ArrowDown'
+      ?(state.personnelHighlight+1)%limit
+      :(state.personnelHighlight<=0?limit-1:state.personnelHighlight-1);
+    renderPersonnelSuggestions();
+  }
 
-    // Fetch ข้อมูล
-    async function fetchAllData() {
-        if(GAS_API_URL.includes('YOUR_SCRIPT_ID')) {
-            // ใช้ Demo Mode
-            if(globalData.length === 0) globalData = generateMockData();
-            return globalData;
-        }
-        
-        try {
-            const response = await fetch(GAS_API_URL, {
-                method: 'POST',
-                body: JSON.stringify({ action: 'getData' })
-            });
-            const result = await response.json();
-            if(result.status === 'success') {
-                globalData = result.data;
-                return result.data;
-            }
-            return [];
-        } catch(e) {
-            console.error(e);
-            return [];
-        }
+  function clean(value){return String(value??'').trim()}
+  function isPass(value){return ['ผ่าน','pass','passed'].includes(clean(value).toLowerCase())}
+  function isBatteryLow(value){return clean(value).includes('ต่ำ')}
+  function unique(values){return [...new Set(values.map(clean).filter(Boolean))]}
+  function numberValue(value){const number=Number(String(value??'').replace(/,/g,''));return Number.isFinite(number)?number:null}
+  function average(values){return values.length?values.reduce((sum,value)=>sum+value,0)/values.length:null}
+
+  function dateKey(value){
+    const match=clean(value).match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})/);
+    return match?Number(match[3])*10000+Number(match[2])*100+Number(match[1]):0;
+  }
+
+  function timestampKey(value){
+    const date=dateKey(value);
+    const match=clean(value).match(/(?:,\s*|\s+)(\d{1,2}):(\d{2})(?::(\d{2}))?/);
+    return date*1000000+(match?Number(match[1])*10000+Number(match[2])*100+Number(match[3]||0):0);
+  }
+
+  function countBy(records,field){
+    const counts=new Map();
+    records.forEach(record=>{
+      const label=clean(record[field])||'(ไม่ระบุ)';
+      counts.set(label,(counts.get(label)||0)+1);
+    });
+    return [...counts].map(([label,value])=>({label,value})).sort((a,b)=>b.value-a.value||a.label.localeCompare(b.label,'th'));
+  }
+
+  function summarize(records){
+    const total=records.length;
+    const passed=records.filter(record=>isPass(record.Status)).length;
+    const batteryLow=records.filter(record=>isBatteryLow(record.BatteryStatus)).length;
+    const l1=records.map(record=>numberValue(record.L1_Result)).filter(value=>value!==null);
+    const l2=records.map(record=>numberValue(record.L2_Result)).filter(value=>value!==null);
+    const latest=records.reduce((current,record)=>timestampKey(record.Timestamp||record.TestDate)>=timestampKey(current)?(record.Timestamp||record.TestDate):current,'');
+    return {
+      total,passed,failed:total-passed,passRate:total?passed*100/total:0,
+      uniqueMachines:unique(records.map(record=>record.MachineID)).length,
+      uniqueDepartments:unique(records.map(record=>record.Department)).length,
+      batteryLow,batteryNormal:Math.max(0,total-batteryLow),
+      avgL1:average(l1),minL1:l1.length?Math.min(...l1):null,maxL1:l1.length?Math.max(...l1):null,
+      avgL2:average(l2),minL2:l2.length?Math.min(...l2):null,maxL2:l2.length?Math.max(...l2):null,
+      departmentCounts:countBy(records,'Department'),
+      dateCounts:countBy(records,'TestDate').sort((a,b)=>dateKey(a.label)-dateKey(b.label)),
+      controlLots:unique(records.map(record=>record.ControlLot)),
+      controlExps:unique(records.map(record=>record.ControlExp)),
+      latestTimestamp:latest
+    };
+  }
+
+  function buildTesters(records){
+    const map=new Map();
+    records.forEach(record=>{
+      const name=clean(record.Tester)||'(ไม่ระบุชื่อ)';
+      if(!map.has(name)) map.set(name,{tester:name,position:clean(record.Position),departments:new Set(),machines:new Set(),tests:0,batteryLow:0,latestDate:''});
+      const tester=map.get(name);
+      tester.tests++;
+      if(record.Department)tester.departments.add(clean(record.Department));
+      if(record.MachineID)tester.machines.add(clean(record.MachineID));
+      if(isBatteryLow(record.BatteryStatus))tester.batteryLow++;
+      if(dateKey(record.TestDate)>=dateKey(tester.latestDate))tester.latestDate=record.TestDate;
+      if(!tester.position&&record.Position)tester.position=clean(record.Position);
+    });
+    return [...map.values()].map(tester=>({...tester,departments:[...tester.departments],machines:tester.machines.size})).sort((a,b)=>b.tests-a.tests||a.tester.localeCompare(b.tester,'th'));
+  }
+
+  function setText(id,value){document.getElementById(id).textContent=value}
+  function fmt2(value){return Number.isFinite(Number(value))?Number(value).toFixed(2):'-'}
+
+  function renderBars(id,items){
+    const container=document.getElementById(id);
+    const values=Array.isArray(items)?items:[];
+    if(!values.length){container.innerHTML='<div class="empty">ยังไม่มีข้อมูล</div>';return}
+    const max=Math.max(...values.map(item=>Number(item.value)||0),1);
+    container.innerHTML=values.map(item=>{
+      const width=Math.max(0,Math.min(100,(Number(item.value)||0)/max*100));
+      return `<div class="bar-row"><div class="bar-label" title="${esc(item.label)}">${esc(item.label)}</div><div class="bar-track"><div class="bar-fill" style="width:${width}%"></div></div><div class="bar-num">${esc(item.value)}</div></div>`;
+    }).join('');
+  }
+
+  function renderSummary(summary){
+    state.summary=summary;
+    const total=Number(summary.total)||0;
+    const passed=Number(summary.passed)||0;
+    const failed=Number(summary.failed)||0;
+    const rate=total?Number(summary.passRate??passed/total*100):0;
+    setText('mTotal',total.toLocaleString('th-TH'));
+    setText('mPassRate',rate.toFixed(rate%1?1:0)+'%');
+    setText('mPassFoot',`ผ่าน ${passed} / ${total} รายการ`);
+    setText('mMachines',Number(summary.uniqueMachines||0).toLocaleString('th-TH'));
+    setText('mDeptFoot',`ครอบคลุม ${Number(summary.uniqueDepartments||0)} หน่วยงาน`);
+    setText('mBatteryLow',Number(summary.batteryLow||0).toLocaleString('th-TH'));
+    const batteryPercent=total?Number(summary.batteryLow||0)*100/total:0;
+    setText('mBatteryFoot',`${batteryPercent.toFixed(1)}% ของการตรวจทั้งหมด`);
+    setText('deptCaption',`${Number(summary.uniqueDepartments||0)} หน่วยงาน`);
+    setText('donutPct',rate.toFixed(rate%1?1:0)+'%');
+    setText('legendPass',passed);setText('legendFail',failed);setText('legendBattery',Number(summary.batteryLow||0));
+    const degrees=Math.max(0,Math.min(360,rate*3.6));
+    document.getElementById('passDonut').style.background=`conic-gradient(var(--success) 0deg ${degrees}deg,#d5e4e6 ${degrees}deg 360deg)`;
+    setText('l1Avg',fmt2(summary.avgL1));setText('l1Min',summary.minL1??'-');setText('l1Max',summary.maxL1??'-');
+    setText('l2Avg',fmt2(summary.avgL2));setText('l2Min',summary.minL2??'-');setText('l2Max',summary.maxL2??'-');
+    setText('controlLot',(summary.controlLots||[]).join(', ')||'-');
+    setText('controlExp',(summary.controlExps||[]).join(', ')||'-');
+    setText('lastUpdate',summary.latestTimestamp||'-');
+    document.getElementById('batteryAlert').innerHTML=Number(summary.batteryLow||0)>0
+      ?`ตรวจพบ <strong>${Number(summary.batteryLow)} รายการ</strong> ที่ระบุ “แบตเตอรี่ต่ำ” ควรเปลี่ยนแบตเตอรี่และตรวจยืนยันความพร้อมก่อนใช้งานกับผู้ป่วย`
+      :'ยังไม่พบรายการที่ระบุ “แบตเตอรี่ต่ำ” ในข้อมูลปัจจุบัน';
+    renderBars('departmentBars',summary.departmentCounts);
+    renderBars('dateBars',summary.dateCounts);
+    renderDepartmentOptions();
+  }
+
+  function setConnectionStatus(text,kind='normal'){
+    const element=document.getElementById('dataSource');
+    element.textContent=text;
+    element.style.borderColor=kind==='error'?'#ffb6b6':'';
+  }
+
+  async function checkRemoteCapabilities(){
+    if(isLocalMode()){state.remoteCapabilities=null;return true}
+    try{
+      const health=await api({action:'health'});
+      state.remoteCapabilities=Array.isArray(health.capabilities)?health.capabilities:[];
+      return ['save','personnel'].every(capability=>state.remoteCapabilities.includes(capability));
+    }catch(error){
+      state.remoteCapabilities=null;
+      return true;
     }
+  }
 
-    // โหลด Dashboard
-    async function loadDashboardData() {
-        document.getElementById('dashboard-content').style.display = 'none';
-        document.getElementById('dashboard-loader').style.display = 'block';
+  function requireRemoteCapability(action){
+    if(isLocalMode()||state.remoteCapabilities===null)return;
+    if(!state.remoteCapabilities.includes(action)){
+      throw new Error('Web App URL นี้ยังเป็น Code.gs รุ่นเดิม กรุณา Deploy > Manage deployments > Edit > New version ก่อนบันทึกข้อมูล');
+    }
+  }
 
-        const data = await fetchAllData();
-        
-        let passCount = 0, failCount = 0, issueCount = 0;
-        const issues = [];
-        const l1Data = [], l2Data = [], labels = [];
+  async function loadSummary(manual=false){
+    if(isLocalMode()){
+      try{
+        const records=readLocalRecords();
+        renderSummary(summarize(records));
+        setConnectionStatus('ข้อมูลในเบราว์เซอร์เครื่องนี้');
+        if(manual)showToast('อัปเดต Dashboard แล้ว');
+      }catch(error){setConnectionStatus('อ่านข้อมูลในเครื่องไม่สำเร็จ','error');showToast(error.message)}
+      return;
+    }
+    setConnectionStatus('กำลังเชื่อม Google Sheet');
+    try{
+      const response=await api({action:'summary'});
+      if(!response.ok)throw new Error(response.message||'โหลดข้อมูลไม่สำเร็จ');
+      renderSummary(response.data);
+      const writable=await checkRemoteCapabilities();
+      setConnectionStatus(writable?'เชื่อม Google Sheet แล้ว':'เชื่อม Sheet แล้ว แต่ต้องอัปเดต deployment',writable?'normal':'error');
+      if(manual)showToast(writable?'อัปเดต Dashboard แล้ว':'อ่านข้อมูลได้ แต่ Web App ยังไม่มีระบบบันทึกหรือฐานบุคลากรรุ่นล่าสุด');
+    }catch(error){setConnectionStatus('เชื่อม Google Sheet ไม่สำเร็จ','error');showToast(error.message)}
+  }
 
-        data.forEach((row, index) => {
-            if(row.FinalStatus === 'ผ่าน') passCount++;
-            if(row.FinalStatus === 'ไม่ผ่าน') failCount++;
-            if(row.BatteryStatus === 'แบตเตอรี่ต่ำ') issueCount++;
+  function switchView(view){
+    const protectedViews=['entry','testers','records','audit'];
+    if(protectedViews.includes(view)&&!state.token){
+      state.pendingView=view;
+      document.querySelectorAll('.view').forEach(element=>element.classList.toggle('active',element.id===view));
+      document.querySelectorAll('.tab').forEach(tab=>tab.classList.toggle('active',tab.dataset.view===view));
+      openLogin(view);
+      return;
+    }
+    document.querySelectorAll('.view').forEach(element=>element.classList.toggle('active',element.id===view));
+    document.querySelectorAll('.tab').forEach(tab=>tab.classList.toggle('active',tab.dataset.view===view));
+    if(['entry','testers','records'].includes(view)&&state.token&&!state.records.length)loadProtectedData(false);
+    if(view==='audit'&&state.token&&!state.audit.length)loadAuditData(false);
+    if(view==='entry'&&!document.getElementById('testDate').value)resetRecordForm();
+  }
 
-            let rowIssues = [];
-            if(row.FinalStatus === 'ไม่ผ่าน') rowIssues.push('IQC ไม่ผ่าน');
-            if(row.BatteryStatus === 'แบตเตอรี่ต่ำ') rowIssues.push('แบตเตอรี่ต่ำ');
-            
-            // เช็คหมดอายุ
-            if(row.StripExpiry) {
-                const parts = row.StripExpiry.split('/');
-                if(parts.length===3) {
-                    const expDate = new Date(`${parts[2]}-${parts[1]}-${parts[0]}`);
-                    const testDateParts = row.TestDate.split('/');
-                    const tDate = new Date(`${testDateParts[2]}-${testDateParts[1]}-${testDateParts[0]}`);
-                    if(expDate < tDate) rowIssues.push('Strip หมดอายุ');
-                }
-            }
+  function openLogin(target=''){
+    if(target)state.pendingView=target;
+    if(state.token){if(!state.records.length)loadProtectedData(false);return}
+    document.getElementById('loginError').textContent='';
+    document.getElementById('loginModeNote').textContent=isLocalMode()
+      ?'โหมดใช้งานในเครื่อง: ค่าเริ่มต้น admin / 1234'
+      :'บัญชี Admin กำหนดไว้ใน Code.gs';
+    document.getElementById('loginModal').classList.add('show');
+    setTimeout(()=>document.getElementById('password').focus(),100);
+  }
 
-            if(rowIssues.length > 0) {
-                issues.push({ date: row.TestDate, dept: row.Department, device: row.DeviceName, issue: rowIssues.join(', ') });
-            }
+  function closeLogin(){document.getElementById('loginModal').classList.remove('show')}
 
-            // Data สำหรับกราฟ 15 ล่าสุด (อ่านย้อนกลับ)
-            if(index < 15) {
-                labels.unshift(row.TestDate.substring(0,5)); 
-                l1Data.unshift(row.L1_Result);
-                l2Data.unshift(row.L2_Result);
-            }
+  async function login(){
+    const username=document.getElementById('username').value.trim();
+    const password=document.getElementById('password').value;
+    const errorBox=document.getElementById('loginError');
+    const button=document.getElementById('loginBtn');
+    errorBox.textContent='';
+    if(!username||!password){errorBox.textContent='กรุณากรอก Username และ Password';return}
+    button.disabled=true;button.textContent='กำลังตรวจสอบ';
+    try{
+      if(isLocalMode()){
+        if(username!==LOCAL_ADMIN.username||password!==LOCAL_ADMIN.password)throw new Error('Username หรือ Password ไม่ถูกต้อง');
+        state.token='local-admin';
+      }else{
+        const challenge=await api({action:'challenge'});
+        if(!challenge.ok)throw new Error(challenge.message||'ขอ Login challenge ไม่สำเร็จ');
+        const proof=await sha256(password+'|'+challenge.nonce);
+        const response=await api({action:'login',username,nonce:challenge.nonce,proof});
+        if(!response.ok)throw new Error(response.message||'Username หรือ Password ไม่ถูกต้อง');
+        state.token=response.token;
+      }
+      sessionStorage.setItem(TOKEN_KEY,state.token);
+      sessionStorage.setItem(TOKEN_MODE_KEY,modeKey());
+      document.getElementById('password').value='';
+      closeLogin();
+      setLoggedInUI(true);
+      await loadProtectedData(false);
+      const target=state.pendingView||'dashboard';
+      state.pendingView='';
+      switchView(target);
+      showToast('เข้าสู่ระบบสำเร็จ');
+    }catch(error){errorBox.textContent=error.message}
+    finally{button.disabled=false;button.textContent='เข้าสู่ระบบ'}
+  }
+
+  function setLoggedInUI(loggedIn){
+    const button=document.getElementById('loginTopBtn');
+    button.textContent=loggedIn?'ออกจากระบบ':'เข้าสู่ระบบ Admin';
+    button.onclick=loggedIn?logout:()=>openLogin();
+    ['entry','testers','records','audit'].forEach(view=>{
+      document.getElementById(view+'Locked').style.display=loggedIn?'none':'block';
+      document.getElementById(view+'Content').style.display=loggedIn?'block':'none';
+    });
+  }
+
+  async function logout(){
+    try{if(!isLocalMode()&&state.token)await api({action:'logout',token:state.token})}catch(error){}
+    state.token='';state.testers=[];state.records=[];state.audit=[];state.personnel=[];state.positions=[];
+    sessionStorage.removeItem(TOKEN_KEY);sessionStorage.removeItem(TOKEN_MODE_KEY);
+    setLoggedInUI(false);resetRecordForm();switchView('dashboard');showToast('ออกจากระบบแล้ว');
+  }
+
+  async function loadProtectedData(showMessage=true){
+    if(!state.token){openLogin();return}
+    try{
+      if(isLocalMode()){
+        const records=readLocalRecords();
+        state.records=records.slice().sort((a,b)=>timestampKey(b.Timestamp||b.TestDate)-timestampKey(a.Timestamp||a.TestDate));
+        state.testers=buildTesters(records);
+        applyPersonnelDirectory(window.IQC_PERSONNEL_DATA||records.map(record=>({fullName:record.Tester,position:record.Position})));
+      }else{
+        const response=await api({action:'details',token:state.token});
+        if(!response.ok){
+          if(response.code==='UNAUTHORIZED'){
+            state.token='';sessionStorage.removeItem(TOKEN_KEY);sessionStorage.removeItem(TOKEN_MODE_KEY);setLoggedInUI(false);openLogin();return;
+          }
+          throw new Error(response.message||'โหลดข้อมูลไม่สำเร็จ');
+        }
+        state.records=response.rows||[];
+        state.testers=response.testers||[];
+        const personnelRows=response.personnel&&response.personnel.length
+          ?response.personnel
+          :(window.IQC_PERSONNEL_DATA||state.records.map(record=>({fullName:record.Tester,position:record.Position})));
+        applyPersonnelDirectory(personnelRows,response.positions||[]);
+      }
+      setLoggedInUI(true);renderRecords();renderTesters();renderDepartmentOptions();
+      if(showMessage)showToast(`โหลดข้อมูล ${state.records.length} รายการแล้ว`);
+    }catch(error){showToast(error.message)}
+  }
+
+  function renderTesters(){
+    const query=(document.getElementById('testerSearch').value||'').trim().toLowerCase();
+    const records=state.testers.filter(record=>JSON.stringify(record).toLowerCase().includes(query));
+    setText('testerCount',`${records.length} รายชื่อ`);
+    document.getElementById('testerBody').innerHTML=records.length?records.map(record=>`<tr>
+      <td><strong>${esc(record.tester||'-')}</strong></td><td>${esc(record.position||'-')}</td>
+      <td>${esc((record.departments||[]).join(', ')||'-')}</td><td>${esc(record.tests||0)}</td><td>${esc(record.machines||0)}</td>
+      <td>${Number(record.batteryLow||0)?`<span class="badge badge-warn">ต่ำ ${esc(record.batteryLow)}</span>`:'<span class="badge badge-ok">ปกติ</span>'}</td>
+      <td>${esc(record.latestDate||'-')}</td></tr>`).join(''):'<tr><td colspan="7" class="empty">ไม่พบข้อมูล</td></tr>';
+  }
+
+  function renderRecords(){
+    const query=(document.getElementById('recordSearch').value||'').trim().toLowerCase();
+    const department=document.getElementById('recordDepartment').value;
+    const status=document.getElementById('recordStatus').value;
+    const filtered=state.records.filter(record=>
+      (!query||JSON.stringify(record).toLowerCase().includes(query))&&
+      (!department||clean(record.Department)===department)&&
+      (!status||(status==='ผ่าน'?isPass(record.Status):!isPass(record.Status)))
+    );
+    const pageSize=Number(document.getElementById('recordPageSize').value)||50;
+    const totalPages=Math.max(1,Math.ceil(filtered.length/pageSize));
+    state.recordPage=Math.max(1,Math.min(state.recordPage,totalPages));
+    const start=(state.recordPage-1)*pageSize;
+    const records=filtered.slice(start,start+pageSize);
+    setText('recordCount',filtered.length===state.records.length?`${filtered.length} รายการ`:`${filtered.length} จาก ${state.records.length} รายการ`);
+    setText('recordPageInfo',`หน้า ${state.recordPage} / ${totalPages}`);
+    document.getElementById('recordPrev').disabled=state.recordPage<=1;
+    document.getElementById('recordNext').disabled=state.recordPage>=totalPages;
+    document.getElementById('recordBody').innerHTML=records.length?records.map(record=>`<tr>
+      <td>${esc(record.ID)}</td><td>${esc(record.Timestamp||record.TestDate)}</td><td>${esc(record.Department)}</td>
+      <td><strong>${esc(record.Tester)}</strong></td><td>${esc(record.Position)}</td><td>${esc(record.MachineID)}</td>
+      <td>${isBatteryLow(record.BatteryStatus)?'<span class="badge badge-warn">แบตเตอรี่ต่ำ</span>':'<span class="badge badge-ok">ปกติ</span>'}</td>
+      <td>${esc(record.ControlLot)}</td><td>${esc(record.ControlExp)}</td><td>${esc(record.L1_Result)}</td><td>${esc(record.L2_Result)}</td>
+      <td>${isPass(record.Status)?'<span class="badge badge-ok">ผ่าน</span>':`<span class="badge badge-warn">${esc(record.Status||'-')}</span>`}</td>
+      <td><div class="row-actions"><button class="btn btn-secondary btn-small" data-id="${esc(record.ID)}" onclick="editRecord(this.dataset.id)">แก้ไข</button><button class="btn btn-danger btn-small" data-id="${esc(record.ID)}" onclick="deleteRecord(this.dataset.id)">ลบ</button></div></td>
+    </tr>`).join(''):'<tr><td colspan="13" class="empty">ไม่พบข้อมูล</td></tr>';
+  }
+
+  function changeRecordPage(direction){
+    state.recordPage+=direction;
+    renderRecords();
+    document.getElementById('recordsContent').scrollIntoView({behavior:'smooth',block:'start'});
+  }
+
+  async function loadAuditData(showMessage=true){
+    if(!state.token){openLogin('audit');return}
+    try{
+      if(isLocalMode()){
+        state.audit=readLocalAudit().slice().reverse();
+      }else{
+        requireRemoteCapability('audit');
+        const response=await api({action:'audit',token:state.token});
+        if(!response.ok){
+          if(response.code==='UNAUTHORIZED'){
+            state.token='';sessionStorage.removeItem(TOKEN_KEY);sessionStorage.removeItem(TOKEN_MODE_KEY);setLoggedInUI(false);openLogin('audit');return;
+          }
+          throw new Error(response.message||'โหลด Audit Log ไม่สำเร็จ');
+        }
+        state.audit=response.rows||[];
+      }
+      renderAudit();
+      if(showMessage)showToast(`โหลดประวัติ ${state.audit.length} รายการแล้ว`);
+    }catch(error){showToast(error.message)}
+  }
+
+  function auditActionLabel(action){
+    return ({CREATE:'เพิ่ม',UPDATE:'แก้ไข',DELETE:'ลบ',IMPORT:'นำเข้า'})[action]||action||'-';
+  }
+
+  function prettyJson(value){
+    if(!value)return '-';
+    try{return JSON.stringify(JSON.parse(value),null,2)}catch(error){return value}
+  }
+
+  function auditDetails(value){
+    if(!value)return '-';
+    const formatted=prettyJson(value);
+    return `<details><summary>ดูข้อมูล</summary><pre class="json-preview">${esc(formatted)}</pre></details>`;
+  }
+
+  function renderAudit(){
+    const query=(document.getElementById('auditSearch').value||'').trim().toLowerCase();
+    const rows=state.audit.filter(row=>JSON.stringify(row).toLowerCase().includes(query));
+    setText('auditCount',`${rows.length} รายการ`);
+    document.getElementById('auditBody').innerHTML=rows.length?rows.map(row=>`<tr>
+      <td>${esc(row.Timestamp||'-')}</td><td>${esc(row.User||'-')}</td><td><span class="badge ${row.Action==='DELETE'?'badge-warn':'badge-ok'}">${esc(auditActionLabel(row.Action))}</span></td>
+      <td>${esc(row.RecordID||'-')}</td><td>${auditDetails(row.BeforeJSON)}</td><td>${auditDetails(row.AfterJSON)}</td>
+    </tr>`).join(''):'<tr><td colspan="6" class="empty">ยังไม่มีประวัติการเปลี่ยนแปลง</td></tr>';
+  }
+
+  function todayInput(){
+    const date=new Date();
+    return `${date.getFullYear()}-${String(date.getMonth()+1).padStart(2,'0')}-${String(date.getDate()).padStart(2,'0')}`;
+  }
+
+  function toInputDate(value){
+    const match=clean(value).match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+    return match?`${match[3]}-${String(match[2]).padStart(2,'0')}-${String(match[1]).padStart(2,'0')}`:'';
+  }
+
+  function toDisplayDate(value){
+    const match=clean(value).match(/^(\d{4})-(\d{1,2})-(\d{1,2})$/);
+    return match?`${String(match[3]).padStart(2,'0')}/${String(match[2]).padStart(2,'0')}/${match[1]}`:clean(value);
+  }
+
+  function localTimestamp(){
+    const date=new Date();
+    return `${date.getDate()}/${date.getMonth()+1}/${date.getFullYear()}, ${String(date.getHours()).padStart(2,'0')}:${String(date.getMinutes()).padStart(2,'0')}:${String(date.getSeconds()).padStart(2,'0')}`;
+  }
+
+  function resetRecordForm(){
+    document.getElementById('recordForm').reset();
+    closePersonnelSuggestions();
+    document.getElementById('recordId').value='';
+    document.getElementById('testDate').value=todayInput();
+    document.getElementById('entryTitle').textContent='บันทึกผล IQC ใหม่';
+    document.getElementById('editingId').textContent='รายการใหม่';
+    document.getElementById('saveRecordBtn').textContent='บันทึกผล IQC';
+    document.getElementById('recordError').textContent='';
+    document.getElementById('controlLotInput').value=(state.summary&&state.summary.controlLots||[]).slice(-1)[0]||'';
+    document.getElementById('controlExpInput').value=toInputDate((state.summary&&state.summary.controlExps||[]).slice(-1)[0]||'');
+  }
+
+  function collectRecord(){
+    return {
+      ID:document.getElementById('recordId').value,
+      TestDate:document.getElementById('testDate').value,
+      Department:document.getElementById('department').value.trim(),
+      Tester:document.getElementById('tester').value.trim(),
+      Position:document.getElementById('position').value.trim(),
+      MachineID:document.getElementById('machineId').value.trim(),
+      BatteryStatus:document.getElementById('batteryStatus').value,
+      ControlLot:document.getElementById('controlLotInput').value.trim(),
+      ControlExp:document.getElementById('controlExpInput').value,
+      L1_Result:Number(document.getElementById('l1Result').value),
+      L2_Result:Number(document.getElementById('l2Result').value),
+      Status:document.getElementById('iqcStatus').value
+    };
+  }
+
+  async function saveRecord(event){
+    event.preventDefault();
+    const form=document.getElementById('recordForm');
+    if(!form.reportValidity())return;
+    const record=collectRecord();
+    const errorBox=document.getElementById('recordError');
+    const button=document.getElementById('saveRecordBtn');
+    errorBox.textContent='';button.disabled=true;button.textContent='กำลังบันทึก';
+    try{
+      let message='';
+      if(isLocalMode()){
+        const records=readLocalRecords();
+        const editing=Boolean(record.ID);
+        const saved={...record,TestDate:toDisplayDate(record.TestDate),ControlExp:toDisplayDate(record.ControlExp),Timestamp:localTimestamp()};
+        let before=null;
+        if(editing){
+          const index=records.findIndex(item=>item.ID===record.ID);
+          if(index<0)throw new Error('ไม่พบรายการที่ต้องการแก้ไข');
+          before={...records[index]};
+          records[index]=saved;
+        }else{
+          saved.ID=`IQC-${Date.now()}-${Math.floor(100+Math.random()*900)}`;
+          records.push(saved);
+        }
+        writeLocalRecords(records);
+        appendLocalAudit(editing?'UPDATE':'CREATE',saved.ID,before,saved);
+        message=editing?'แก้ไขรายการเรียบร้อยแล้ว':'บันทึกรายการเรียบร้อยแล้ว';
+      }else{
+        requireRemoteCapability('save');
+        const response=await api({action:'save',token:state.token,record:JSON.stringify(record)});
+        if(!response.ok){
+          if(response.code==='UNAUTHORIZED')throw new Error('Session หมดอายุ กรุณาเข้าสู่ระบบใหม่');
+          throw new Error(response.message||'บันทึกข้อมูลไม่สำเร็จ');
+        }
+        message=response.message;
+      }
+      state.audit=[];await loadSummary(false);await loadProtectedData(false);resetRecordForm();switchView('records');showToast(message);
+    }catch(error){errorBox.textContent=error.message}
+    finally{button.disabled=false;if(!document.getElementById('recordId').value)button.textContent='บันทึกผล IQC'}
+  }
+
+  function startNewRecord(){resetRecordForm();switchView('entry')}
+
+  function editRecord(id){
+    const record=state.records.find(item=>String(item.ID)===String(id));
+    if(!record){showToast('ไม่พบรายการที่ต้องการแก้ไข');return}
+    document.getElementById('recordId').value=record.ID||'';
+    document.getElementById('testDate').value=toInputDate(record.TestDate)||todayInput();
+    document.getElementById('department').value=record.Department||'';
+    document.getElementById('tester').value=record.Tester||'';
+    document.getElementById('position').value=record.Position||'';
+    document.getElementById('machineId').value=record.MachineID||'';
+    document.getElementById('batteryStatus').value=record.BatteryStatus||'แบตเตอรี่ปกติ';
+    document.getElementById('controlLotInput').value=record.ControlLot||'';
+    document.getElementById('controlExpInput').value=toInputDate(record.ControlExp);
+    document.getElementById('l1Result').value=record.L1_Result??'';
+    document.getElementById('l2Result').value=record.L2_Result??'';
+    document.getElementById('iqcStatus').value=isPass(record.Status)?'ผ่าน':'ไม่ผ่าน';
+    document.getElementById('entryTitle').textContent='แก้ไขผล IQC';
+    document.getElementById('editingId').textContent=record.ID;
+    document.getElementById('saveRecordBtn').textContent='บันทึกการแก้ไข';
+    document.getElementById('recordError').textContent='';
+    switchView('entry');window.scrollTo({top:0,behavior:'smooth'});
+  }
+
+  async function deleteRecord(id){
+    const record=state.records.find(item=>String(item.ID)===String(id));
+    if(!record)return;
+    if(!confirm(`ยืนยันการลบรายการ ${record.ID}\n${record.Tester} · ${record.MachineID}`))return;
+    try{
+      if(isLocalMode()){
+        const records=readLocalRecords();
+        writeLocalRecords(records.filter(item=>String(item.ID)!==String(id)));
+        appendLocalAudit('DELETE',id,record,null);
+      }else{
+        requireRemoteCapability('delete');
+        const response=await api({action:'delete',token:state.token,id});
+        if(!response.ok)throw new Error(response.message||'ลบข้อมูลไม่สำเร็จ');
+      }
+      state.audit=[];await loadSummary(false);await loadProtectedData(false);showToast('ลบรายการเรียบร้อยแล้ว');
+    }catch(error){showToast(error.message)}
+  }
+
+  function renderDepartmentOptions(){
+    let departments=[];
+    try{
+      const source=state.records.length?state.records:(isLocalMode()?readLocalRecords():[]);
+      departments=unique(source.map(record=>record.Department)).sort((a,b)=>a.localeCompare(b,'th'));
+    }catch(error){}
+    document.getElementById('departmentOptions').innerHTML=departments.map(value=>`<option value="${esc(value)}"></option>`).join('');
+    const select=document.getElementById('recordDepartment');
+    const selected=select.value;
+    select.innerHTML='<option value="">ทุกหน่วยงาน</option>'+departments.map(value=>`<option value="${esc(value)}">${esc(value)}</option>`).join('');
+    if(departments.includes(selected))select.value=selected;
+  }
+
+  function exportCsv(){
+    if(!state.records.length){showToast('ยังไม่มีข้อมูลสำหรับส่งออก');return}
+    const quote=value=>'"'+String(value??'').replace(/"/g,'""')+'"';
+    const csv='\uFEFF'+[HEADERS.map(quote).join(','),...state.records.map(record=>HEADERS.map(header=>quote(record[header])).join(','))].join('\r\n');
+    const blob=new Blob([csv],{type:'text/csv;charset=utf-8'});
+    const url=URL.createObjectURL(blob);
+    const link=document.createElement('a');
+    link.href=url;link.download=`IQC_export_${todayInput()}.csv`;document.body.appendChild(link);link.click();link.remove();URL.revokeObjectURL(url);
+    showToast('ส่งออกไฟล์ CSV แล้ว');
+  }
+
+  function parseCsv(text){
+    const rows=[];
+    let row=[];
+    let field='';
+    let quoted=false;
+    for(let index=0;index<text.length;index++){
+      const character=text[index];
+      if(quoted){
+        if(character==='"'&&text[index+1]==='"'){field+='"';index++}
+        else if(character==='"'){quoted=false}
+        else{field+=character}
+      }else if(character==='"'&&!field){quoted=true}
+      else if(character===','){row.push(field);field=''}
+      else if(character==='\n'){row.push(field.replace(/\r$/,''));rows.push(row);row=[];field=''}
+      else{field+=character}
+    }
+    if(field||row.length){row.push(field.replace(/\r$/,''));rows.push(row)}
+    return rows;
+  }
+
+  function normalizeImportDate(value,label,rowNumber){
+    const text=clean(value);
+    const iso=text.match(/^(\d{4})-(\d{1,2})-(\d{1,2})$/);
+    const display=text.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+    let day,month,year;
+    if(iso){year=Number(iso[1]);month=Number(iso[2]);day=Number(iso[3])}
+    else if(display){day=Number(display[1]);month=Number(display[2]);year=Number(display[3])}
+    else{throw new Error(`แถว ${rowNumber}: ${label} ต้องเป็นวันที่รูปแบบ DD/MM/YYYY`)}
+    const date=new Date(year,month-1,day);
+    if(date.getFullYear()!==year||date.getMonth()!==month-1||date.getDate()!==day)throw new Error(`แถว ${rowNumber}: ${label} ไม่ถูกต้อง`);
+    return `${String(day).padStart(2,'0')}/${String(month).padStart(2,'0')}/${year}`;
+  }
+
+  function normalizeImportedRecord(raw,rowNumber){
+    const required=[['Department','หน่วยงาน'],['Tester','ผู้ทดสอบ'],['Position','ตำแหน่ง'],['MachineID','Machine ID'],['ControlLot','Control Lot']];
+    required.forEach(([field,label])=>{if(!clean(raw[field]))throw new Error(`แถว ${rowNumber}: ไม่พบ${label}`)});
+    const l1Text=clean(raw.L1_Result).replace(/,/g,'');
+    const l2Text=clean(raw.L2_Result).replace(/,/g,'');
+    if(!l1Text||!Number.isFinite(Number(l1Text))||Number(l1Text)<0)throw new Error(`แถว ${rowNumber}: L1 ต้องเป็นตัวเลขตั้งแต่ 0 ขึ้นไป`);
+    if(!l2Text||!Number.isFinite(Number(l2Text))||Number(l2Text)<0)throw new Error(`แถว ${rowNumber}: L2 ต้องเป็นตัวเลขตั้งแต่ 0 ขึ้นไป`);
+    const battery=clean(raw.BatteryStatus);
+    const status=clean(raw.Status);
+    if(!['แบตเตอรี่ปกติ','แบตเตอรี่ต่ำ'].includes(battery))throw new Error(`แถว ${rowNumber}: สถานะแบตเตอรี่ไม่ถูกต้อง`);
+    if(!['ผ่าน','ไม่ผ่าน'].includes(status))throw new Error(`แถว ${rowNumber}: สถานะ IQC ไม่ถูกต้อง`);
+    return {
+      ID:clean(raw.ID),Timestamp:clean(raw.Timestamp),TestDate:normalizeImportDate(raw.TestDate,'วันที่ทดสอบ',rowNumber),
+      Department:clean(raw.Department),Tester:clean(raw.Tester),Position:clean(raw.Position),MachineID:clean(raw.MachineID),
+      BatteryStatus:battery,ControlLot:clean(raw.ControlLot),ControlExp:normalizeImportDate(raw.ControlExp,'Control Exp.',rowNumber),
+      L1_Result:Number(l1Text),L2_Result:Number(l2Text),Status:status
+    };
+  }
+
+  async function importCsv(event){
+    const input=event.target;
+    const file=input.files&&input.files[0];
+    if(!file)return;
+    try{
+      const rows=parseCsv(await file.text()).filter(row=>row.some(value=>clean(value)));
+      if(rows.length<2)throw new Error('ไฟล์ CSV ไม่มีข้อมูลสำหรับนำเข้า');
+      const headers=rows.shift().map((value,index)=>index===0?clean(value).replace(/^\uFEFF/,''):clean(value));
+      if(headers.length!==HEADERS.length||HEADERS.some((header,index)=>headers[index]!==header)){
+        throw new Error('หัวคอลัมน์ CSV ไม่ตรงกับรูปแบบ IQC กรุณาใช้ไฟล์ที่ส่งออกจากระบบนี้');
+      }
+      const records=rows.map((row,index)=>normalizeImportedRecord(Object.fromEntries(HEADERS.map((header,column)=>[header,row[column]??''])),index+2));
+      const ids=new Set();
+      records.forEach(record=>{if(record.ID&&ids.has(record.ID))throw new Error(`พบ ID ซ้ำในไฟล์: ${record.ID}`);if(record.ID)ids.add(record.ID)});
+      if(!confirm(`นำเข้าข้อมูล ${records.length} รายการ\nID ที่มีอยู่แล้วจะถูกอัปเดต และ ID ใหม่จะถูกเพิ่ม`))return;
+
+      let inserted=0,updated=0;
+      if(isLocalMode()){
+        const current=readLocalRecords();
+        const indexById=new Map(current.map((record,index)=>[String(record.ID),index]));
+        records.forEach(record=>{
+          if(record.ID&&indexById.has(record.ID)){current[indexById.get(record.ID)]={...record,Timestamp:record.Timestamp||localTimestamp()};updated++}
+          else{
+            const saved={...record,ID:record.ID||`IQC-${Date.now()}-${Math.floor(100+Math.random()*900)}`,Timestamp:record.Timestamp||localTimestamp()};
+            current.push(saved);inserted++;
+          }
         });
-
-        const total = data.length;
-        document.getElementById('kpi-total').innerText = total;
-        document.getElementById('kpi-pass-val').innerText = passCount;
-        document.getElementById('kpi-pass-pct').innerText = total > 0 ? `(${(passCount/total*100).toFixed(1)}%)` : '(0%)';
-        document.getElementById('kpi-fail-val').innerText = failCount;
-        document.getElementById('kpi-fail-pct').innerText = total > 0 ? `(${(failCount/total*100).toFixed(1)}%)` : '(0%)';
-        document.getElementById('kpi-issue').innerText = issueCount;
-
-        // Table
-        const tbody = document.getElementById('issue-table-body');
-        tbody.innerHTML = '';
-        if(issues.length === 0) {
-            tbody.innerHTML = '<tr><td colspan="4" class="px-5 py-6 text-center text-gray-400 bg-white"><i class="fas fa-check-circle text-2xl text-emerald-300 block mb-2"></i> ไม่พบรายการผิดปกติ</td></tr>';
-        } else {
-            issues.slice(0, 10).forEach(i => {
-                tbody.innerHTML += `
-                    <tr class="bg-white hover:bg-pink-50/30 transition">
-                        <td class="px-5 py-3 whitespace-nowrap">${i.date}</td>
-                        <td class="px-5 py-3">${i.dept}</td>
-                        <td class="px-5 py-3 font-medium">${i.device}</td>
-                        <td class="px-5 py-3 text-pink-500 font-semibold text-xs"><span class="bg-pink-50 px-2 py-1 rounded">${i.issue}</span></td>
-                    </tr>`;
-            });
+        writeLocalRecords(current);
+        appendLocalAudit('IMPORT',`${inserted}+${updated}`,null,{inserted,updated,total:records.length});
+      }else{
+        requireRemoteCapability('import');
+        const batchSize=hasNativeRpc()?200:5;
+        for(let start=0;start<records.length;start+=batchSize){
+          const response=await api({action:'import',token:state.token,records:JSON.stringify(records.slice(start,start+batchSize))});
+          if(!response.ok)throw new Error(response.message||'นำเข้าข้อมูลไม่สำเร็จ');
+          inserted+=Number(response.inserted||0);updated+=Number(response.updated||0);
         }
+      }
+      await loadSummary(false);await loadProtectedData(false);state.audit=[];
+      showToast(`นำเข้าสำเร็จ ${records.length} รายการ (เพิ่ม ${inserted}, อัปเดต ${updated})`);
+    }catch(error){showToast(error.message)}
+    finally{input.value=''}
+  }
 
-        renderCharts(passCount, failCount, labels, l1Data, l2Data);
+  function openSettings(){
+    const saved=localStorage.getItem(GAS_URL_KEY);
+    document.getElementById('gasUrlInput').value=saved===null?getGasUrl():saved;
+    document.getElementById('settingsError').textContent='';
+    document.getElementById('settingsModal').classList.add('show');
+  }
+  function closeSettings(){document.getElementById('settingsModal').classList.remove('show')}
 
-        // Add small delay for smoothness
-        setTimeout(() => {
-            document.getElementById('dashboard-loader').style.display = 'none';
-            document.getElementById('dashboard-content').style.display = 'block';
-        }, 300);
+  async function saveSettings(){
+    const input=document.getElementById('gasUrlInput').value.trim();
+    const errorBox=document.getElementById('settingsError');
+    if(input&&!isConfiguredUrl(input)){errorBox.textContent='URL ต้องเป็น Google Apps Script Web App ที่ลงท้ายด้วย /exec';return}
+    const oldMode=modeKey();
+    localStorage.setItem(GAS_URL_KEY,input);
+    closeSettings();
+    if(oldMode!==modeKey()){
+      state.token='';state.records=[];state.testers=[];state.audit=[];state.personnel=[];state.positions=[];state.remoteCapabilities=null;
+      sessionStorage.removeItem(TOKEN_KEY);sessionStorage.removeItem(TOKEN_MODE_KEY);setLoggedInUI(false);
     }
+    await loadPersonnelSource();
+    loadSummary(true);
+  }
 
-    function renderCharts(pass, fail, labels, l1, l2) {
-        if(charts.pie) charts.pie.destroy();
-        if(charts.line) charts.line.destroy();
-
-        // Chart.js Default styling
-        Chart.defaults.font.family = "'Sarabun', sans-serif";
-        Chart.defaults.color = '#6b7280';
-
-        const ctxStatus = document.getElementById('chartStatus').getContext('2d');
-        charts.pie = new Chart(ctxStatus, {
-            type: 'doughnut',
-            data: {
-                labels: ['ผ่าน (Pass)', 'ไม่ผ่าน (Fail)'],
-                datasets: [{
-                    data: [pass, fail],
-                    backgroundColor: ['#34d399', '#f472b6'], // emerald-400, pink-400
-                    borderWidth: 3,
-                    borderColor: '#ffffff',
-                    hoverOffset: 4
-                }]
-            },
-            options: { 
-                responsive: true, maintainAspectRatio: false, 
-                plugins: { legend: { position: 'bottom', labels: { usePointStyle: true, padding: 20 } } },
-                cutout: '70%'
-            }
-        });
-
-        const ctxTrend = document.getElementById('chartTrend').getContext('2d');
-        charts.line = new Chart(ctxTrend, {
-            type: 'line',
-            data: {
-                labels: labels,
-                datasets: [
-                    { 
-                        label: 'L1 (30-60)', data: l1, 
-                        borderColor: '#c084fc', // purple-400
-                        backgroundColor: '#c084fc',
-                        tension: 0.4, yAxisID: 'y', borderWidth: 2,
-                        pointBackgroundColor: '#fff', pointBorderWidth: 2, pointRadius: 4
-                    },
-                    { 
-                        label: 'L2 (252-342)', data: l2, 
-                        borderColor: '#fb923c', // orange-400
-                        backgroundColor: '#fb923c',
-                        tension: 0.4, yAxisID: 'y1', borderWidth: 2, borderDash: [5, 5],
-                        pointBackgroundColor: '#fff', pointBorderWidth: 2, pointRadius: 4
-                    }
-                ]
-            },
-            options: {
-                responsive: true, maintainAspectRatio: false,
-                interaction: { mode: 'index', intersect: false },
-                plugins: { legend: { position: 'top', labels: { usePointStyle: true } } },
-                scales: {
-                    x: { grid: { display: false } },
-                    y: { 
-                        type: 'linear', display: true, position: 'left',
-                        grid: { borderDash: [2, 4], color: '#f3f4f6' }
-                    },
-                    y1: { 
-                        type: 'linear', display: true, position: 'right', 
-                        grid: { drawOnChartArea: false }
-                    }
-                }
-            }
-        });
+  async function initialize(){
+    if(sessionStorage.getItem(TOKEN_MODE_KEY)!==modeKey()){
+      state.token='';sessionStorage.removeItem(TOKEN_KEY);sessionStorage.removeItem(TOKEN_MODE_KEY);
     }
+    document.getElementById('password').addEventListener('keydown',event=>{if(event.key==='Enter')login()});
+    document.addEventListener('keydown',event=>{if(event.key==='Escape'){closeLogin();closeSettings()}});
+    await loadPersonnelSource();
+    setLoggedInUI(Boolean(state.token));
+    resetRecordForm();
+    loadSummary(false);
+    if(state.token)loadProtectedData(false);
+  }
 
-    // Admin Login
-    async function adminLogin() {
-        const pass = document.getElementById('adminPassword').value;
-        if(!pass) return;
-        
-        // Demo Mode Admin
-        if(GAS_API_URL.includes('YOUR_SCRIPT_ID') && pass === '1234') {
-            isAdminLoggedIn = true;
-            document.getElementById('admin-login-view').style.display = 'none';
-            document.getElementById('admin-data-view').style.display = 'block';
-            loadAdminData();
-            return;
-        }
-        
-        try {
-            const res = await fetch(GAS_API_URL, {
-                method: 'POST',
-                body: JSON.stringify({ action: 'login', payload: { password: pass } })
-            });
-            const result = await res.json();
-            
-            if(result.status === 'success') {
-                isAdminLoggedIn = true;
-                currentAdminPass = pass;
-                document.getElementById('admin-login-view').style.display = 'none';
-                document.getElementById('admin-data-view').style.display = 'block';
-                loadAdminData();
-            } else {
-                Swal.fire({icon: 'error', title: 'รหัสผ่านผิด', confirmButtonColor: '#f472b6'});
-            }
-        } catch (e) {
-            Swal.fire('Error', 'การเชื่อมต่อระบบล้มเหลว', 'error');
-        }
-    }
-
-    function adminLogout() {
-        isAdminLoggedIn = false;
-        currentAdminPass = '';
-        document.getElementById('admin-login-view').style.display = 'block';
-        document.getElementById('admin-data-view').style.display = 'none';
-        document.getElementById('adminPassword').value = '';
-    }
-
-    // Load Admin Data
-    async function loadAdminData() {
-        document.getElementById('admin-loader').style.display = 'block';
-        const tbody = document.getElementById('admin-table-body');
-        tbody.innerHTML = '';
-
-        const data = await fetchAllData();
-        
-        data.forEach(row => {
-            const isFail = row.FinalStatus === 'ไม่ผ่าน';
-            const statusBadge = isFail ? 
-                '<span class="bg-pink-100 text-pink-700 px-3 py-1 rounded-full text-xs font-semibold">ไม่ผ่าน</span>' : 
-                '<span class="bg-emerald-100 text-emerald-700 px-3 py-1 rounded-full text-xs font-semibold">ผ่าน</span>';
-            
-            const l1Warn = (row.L1_Result < 30 || row.L1_Result > 60) ? 'text-pink-500 font-bold bg-pink-50 rounded' : '';
-            const l2Warn = (row.L2_Result < 252 || row.L2_Result > 342) ? 'text-pink-500 font-bold bg-pink-50 rounded' : '';
-
-            tbody.innerHTML += `
-                <tr class="bg-white hover:bg-purple-50/50 transition">
-                    <td class="px-5 py-3 whitespace-nowrap">${row.TestDate}</td>
-                    <td class="px-5 py-3">${row.Department}</td>
-                    <td class="px-5 py-3 text-purple-700 font-medium">${row.DeviceName}</td>
-                    <td class="px-5 py-3 text-center ${l1Warn}">${row.L1_Result}</td>
-                    <td class="px-5 py-3 text-center ${l2Warn}">${row.L2_Result}</td>
-                    <td class="px-5 py-3 text-center">${statusBadge}</td>
-                    <td class="px-5 py-3 text-center">
-                        <button onclick="deleteRecord('${row.RecordID}')" class="text-gray-400 hover:text-pink-500 bg-gray-50 hover:bg-pink-50 p-2 rounded-lg transition" title="ลบข้อมูล"><i class="fas fa-trash"></i></button>
-                    </td>
-                </tr>
-            `;
-        });
-        document.getElementById('admin-loader').style.display = 'none';
-    }
-
-    function filterAdminTable() {
-        const query = document.getElementById('searchInput').value.toLowerCase();
-        const rows = document.getElementById('admin-table-body').getElementsByTagName('tr');
-        for (let i = 0; i < rows.length; i++) {
-            const text = rows[i].innerText.toLowerCase();
-            rows[i].style.display = text.includes(query) ? '' : 'none';
-        }
-    }
-
-    async function deleteRecord(id) {
-        const confirm = await Swal.fire({
-            title: 'ยืนยันการลบ?', text: "ลบแล้วไม่สามารถกู้คืนได้!", icon: 'warning',
-            showCancelButton: true, confirmButtonColor: '#f472b6', cancelButtonColor: '#9ca3af'
-        });
-
-        if(confirm.isConfirmed) {
-            // Demo mode logic
-            if(GAS_API_URL.includes('YOUR_SCRIPT_ID')) {
-                globalData = globalData.filter(d => d.RecordID !== id);
-                Swal.fire({icon: 'success', title: 'ลบสำเร็จ (Demo)', confirmButtonColor: '#c084fc'});
-                loadAdminData();
-                return;
-            }
-
-            Swal.fire({title: 'กำลังลบ...', allowOutsideClick: false, didOpen: () => { Swal.showLoading() }});
-            try {
-                const res = await fetch(GAS_API_URL, {
-                    method: 'POST',
-                    body: JSON.stringify({ action: 'deleteData', payload: { RecordID: id }, adminPass: currentAdminPass })
-                });
-                const result = await res.json();
-                if(result.status === 'success') {
-                    Swal.fire({icon: 'success', title: 'ลบสำเร็จ', confirmButtonColor: '#c084fc'});
-                    loadAdminData();
-                } else throw new Error(result.message);
-            } catch(e) {
-                Swal.fire('ผิดพลาด', e.message, 'error');
-            }
-        }
-    }
+  initialize();
 </script>
 </body>
 </html>
